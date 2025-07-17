@@ -16,21 +16,23 @@ Built with HTML, CSS, and JavaScript, this project includes breed-based theming,
 
 ---
 
-## 📂 File Structure
+## 🗂️ File Structure
 
+```
 Pet-AI-Assistant/
-├── index.html ← Profile form page
-├── recommendation.html ← Food recommendation page
+├── index.html                ← Profile form page
+├── recommendation.html       ← Food recommendation page
 ├── css/
-│ ├── form.css
-│ └── recommendation.css
+│   ├── form.css
+│   └── recommendation.css
 ├── js/
-│ ├── form.js
-│ └── recommendation.js
+│   ├── form.js
+│   └── recommendation.js
 ├── images/
-│ └── raw.PNG
-├── dev-log.md ← Daily progress journal
-└── README.md ← Project overview
+│   └── raw.PNG
+├── dev-log.md                ← Daily progress journal
+```
+
 
 ---
 
