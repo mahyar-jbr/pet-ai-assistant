@@ -1,0 +1,411 @@
+/* ============================
+   GLOBAL DESIGN VARIABLES
+   ============================ */
+:root {
+  /* Default pill styles */
+  --pill-bg: #dceeff;
+  --pill-text: #003087;
+  --pill-border: #99cfff;
+
+  /* Pill hover state */
+  --pill-hover-bg: #ffe6e6;
+  --pill-hover-text: red;
+  --pill-hover-border: #ff9999;
+
+  /* "Add Allergy" pill styles */
+  --pill-add-bg: #e0efff;
+  --pill-add-text: #0073e6;
+  --pill-add-border: #0073e6; 
+  --pill-add-hover-bg: #d0e8ff;
+  --pill-add-hover-text: #0057cc;
+  --pill-add-hover-border: #0057cc;
+
+  /* Button colors */
+  --button-bg: #0057ff;
+  --button-bg-hover: #0041cc;
+
+  /* Layout and typography colors */
+  --bg-color: #cce4ff;
+  --card-bg: #ffffff;
+  --text-color: #003087;
+  --subtitle-color: #444;
+}
+
+/* ============================
+   BREED-SPECIFIC THEMES
+   ============================ */
+
+/* Dark theme for Doberman */
+.doberman-theme {
+  --bg-color: #1c1c1c;
+  --card-bg: #2a2a2a;
+  --text-color: #ffffff;
+  --subtitle-color: #bbbbbb;
+
+  --pill-bg: #3a3a3a;
+  --pill-text: #ff6600;
+  --pill-border: #ff6600;
+  --pill-hover-bg: #ffefef;
+  --pill-hover-text: red;
+  --pill-hover-border: #ffaaaa;
+
+  --pill-add-bg: #333;
+  --pill-add-text: white;
+  --pill-add-border: #888;
+  --pill-add-hover-bg: #444;
+  --pill-add-hover-text: white;
+  --pill-add-hover-border: white;
+
+  --button-bg: #444;
+  --button-bg-hover: #555;
+  --button-shadow: rgba(255, 102, 0, 0.4); /* warm orange glow */
+}
+
+/* Golden Retriever theme */
+.golden-theme {
+  --bg-color: #fff8e1;
+  --card-bg: #ffffff;
+  --text-color: #8b5e00;
+  --subtitle-color: #665200;
+
+  --pill-bg: #ffecb3;
+  --pill-text: #8b5e00;
+  --pill-border: #ffca28;
+  --pill-hover-bg: #fff3e0;
+  --pill-hover-text: #c62828;
+  --pill-hover-border: #ff8a65;
+
+  --pill-add-bg: #fff3cd;
+  --pill-add-text: #b15b00;
+  --pill-add-border: #b15b00;
+  --pill-add-hover-bg: #ffeb99;
+  --pill-add-hover-text: #a55000;
+  --pill-add-hover-border: #a55000;
+
+  --button-bg: #ffca28;
+  --button-bg-hover: #fbc02d;
+  --button-shadow: rgba(255, 179, 0, 0.4); /* golden glow */
+}
+
+/* Cane Corso theme */
+.cane-theme {
+  --bg-color: #1c1c1c;
+  --card-bg: #2b2b2b;
+  --text-color: #ffffff;
+  --subtitle-color: #cccccc;
+
+  --pill-bg: #444;
+  --pill-text: #fff;
+  --pill-border: #888;
+  --pill-hover-bg: #331111;
+  --pill-hover-text: #ff4d4d;
+  --pill-hover-border: #ff8080;
+
+  --pill-add-bg: #666;
+  --pill-add-text: #ffffff;
+  --pill-add-border: #aaa;
+  --pill-add-hover-bg: #555;
+  --pill-add-hover-text: #ffffff;
+  --pill-add-hover-border: #ccc;
+
+  --button-bg: #444;
+  --button-bg-hover: #555;
+  --button-shadow: rgba(255, 255, 255, 0.15);
+}
+
+/* Border Collie theme */
+.border-collie-theme {
+  --bg-color: #f1f1f1;
+  --card-bg: #ffffff;
+  --text-color: #1c1c1c;
+  --subtitle-color: #666;
+
+  --pill-bg: #e6e6e6;
+  --pill-text: #1c1c1c;
+  --pill-border: #999;
+  --pill-hover-bg: #333;
+  --pill-hover-text: #fff;
+  --pill-hover-border: #666;
+
+  --pill-add-bg: #dddddd;
+  --pill-add-text: #000;
+  --pill-add-border: #888;
+  --pill-add-hover-bg: #ccc;
+  --pill-add-hover-text: #000;
+  --pill-add-hover-border: #555;
+
+  --button-bg: #333;
+  --button-bg-hover: #1c1c1c;
+  --button-shadow: rgba(0, 0, 0, 0.2);
+}
+
+/* Husky theme */
+.husky-theme {
+  --bg-color: #e6f2ff;
+  --card-bg: #ffffff;
+  --text-color: #1a1a1a;
+  --subtitle-color: #555;
+
+  --pill-bg: #dceeff;
+  --pill-text: #003366;
+  --pill-border: #66a3ff;
+  --pill-hover-bg: #ccf2ff;
+  --pill-hover-text: #005580;
+  --pill-hover-border: #3399ff;
+
+  --pill-add-bg: #f0f8ff;
+  --pill-add-text: #003366;
+  --pill-add-border: #66a3ff;
+  --pill-add-hover-bg: #e0f0ff;
+  --pill-add-hover-text: #002244;
+  --pill-add-hover-border: #3385ff;
+
+  --button-bg: #3399ff;
+  --button-bg-hover: #007acc;
+  --button-shadow: rgba(0, 102, 204, 0.3);
+}
+
+/* Chocolate Labrador theme */
+.labrador-theme {
+  --bg-color: #f3f0ec;
+  --card-bg: #fffaf7;
+  --text-color: #4b2e1f;
+  --subtitle-color: #6e4d3c;
+
+  --pill-bg: #e8ddd3;
+  --pill-text: #4b2e1f;
+  --pill-border: #bfa68a;
+  --pill-hover-bg: #f3e3d3;
+  --pill-hover-text: #5d3624;
+  --pill-hover-border: #d2b08c;
+
+  --pill-add-bg: #e5d5c5;
+  --pill-add-text: #4b2e1f;
+  --pill-add-border: #a1866a;
+  --pill-add-hover-bg: #ddc9b9;
+  --pill-add-hover-text: #3a2518;
+  --pill-add-hover-border: #8c6b53;
+
+  --button-bg: #6f4e37;
+  --button-bg-hover: #593c2a;
+  --button-shadow: rgba(111, 78, 55, 0.3);
+}
+
+/* ============================
+   GLOBAL STYLES
+   ============================ */
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  transition: background-color 0.4s ease;
+}
+
+/* Form container */
+.container {
+  width: 100%;
+  max-width: 520px;
+  padding: 20px;
+}
+
+/* Card style for the form */
+.form-card {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.4s ease;
+}
+
+/* Typography */
+h1 {
+  font-size: 24px;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  transition: color 0.4s ease;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--subtitle-color);
+  margin-bottom: 20px;
+  transition: color 0.4s ease;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 6px;
+  transition: color 0.4s ease;
+}
+
+/* Input + Select styles */
+input[type="text"],
+select {
+  width: 100%;
+  height: 48px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  transition: border-color 0.4s ease, color 0.4s ease, background-color 0.4s ease;
+}
+
+/* Custom select arrow styling */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 2l4 4 4-4' stroke='%23000' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-position: right 16px center;
+  background-repeat: no-repeat;
+  background-size: 12px 8px;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--button-bg);
+  box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.2);
+  background-color: #f5faff;
+}
+
+/* Form layout rows */
+.input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Responsive groups inside a row */
+.input-group {
+  flex: 1;
+  min-width: 45%;
+}
+
+/* Allergy pill container */
+.allergy-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 30px;
+}
+
+/* ============================
+   PILL STYLES
+   ============================ */
+.pill {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  background-color: var(--pill-bg);
+  color: var(--pill-text);
+  border: 1px solid var(--pill-border);
+  display: inline-block;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Special styling for "Add" pill */
+.pill.add {
+  background-color: var(--pill-add-bg);
+  color: var(--pill-add-text);
+  border: 1px dashed var(--pill-add-border);
+  cursor: pointer;
+}
+
+.pill.add:hover {
+  background-color: var(--pill-add-hover-bg);
+  color: var(--pill-add-hover-text);
+  border-color: var(--pill-add-hover-border);
+  transform: scale(1.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Removable pill hover animation */
+.pill.removable:hover {
+  background-color: var(--pill-hover-bg);
+  color: var(--pill-hover-text);
+  border-color: var(--pill-hover-border);
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(255, 0, 0, 0.2);
+}
+
+/* Close "×" button for pills */
+.pill .close-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: red;
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transform: scale(0.8);
+}
+
+.pill.removable:hover .close-btn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* ============================
+   BUTTON STYLES
+   ============================ */
+.submit-btn {
+  width: 100%;
+  background-color: var(--button-bg);
+  color: white;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+
+button:hover {
+  background-color: var(--button-bg-hover);
+  box-shadow: 0 0 10px var(--button-shadow);
+  transform: scale(1.02);
+}
+
+/* Number input styling (no spinners) */
+input[type="number"] {
+  appearance: none;
+  -moz-appearance: textfield;
+  font-size: 1rem;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

@@ -1,0 +1,369 @@
+/* Root variables for default theme */
+:root {
+  --bg-color: #cce4ff;
+  --card-bg: #ffffff;
+  --text-color: #003087;
+  --subtitle-color: #444;
+  --pill-bg: #dceeff;
+  --pill-text: #003087;
+  --pill-border: #99cfff;
+  --pill-radius: 20px;
+  --card-radius: 12px;
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --button-bg: #0057ff;
+  --button-bg-hover: #0041cc;
+}
+
+/* --- Breed-Based Theme Overrides --- */
+
+/* Doberman Theme */
+.doberman-theme {
+  --bg-color: #1c1c1c;
+  --card-bg: #2a2a2a;
+  --text-color: #ffffff;
+  --subtitle-color: #bbbbbb;
+  --pill-bg: #3a3a3a;
+  --pill-text: #ff6600;
+  --pill-border: #ff6600;
+  --pill-hover-bg: #ffefef;
+  --pill-hover-text: red;
+  --pill-hover-border: #ffaaaa;
+  --pill-add-bg: #333;
+  --pill-add-text: white;
+  --pill-add-border: #888;
+  --pill-add-hover-bg: #444;
+  --pill-add-hover-text: white;
+  --pill-add-hover-border: white;
+  --button-bg: #ff6600;
+  --button-bg-hover: #cc5200;
+  --button-shadow: rgba(255, 102, 0, 0.35);
+}
+
+/* Golden Retriever Theme */
+.golden-theme {
+  --bg-color: #fff8e1;
+  --card-bg: #ffffff;
+  --text-color: #8b5e00;
+  --subtitle-color: #665200;
+  --pill-bg: #ffecb3;
+  --pill-text: #8b5e00;
+  --pill-border: #ffca28;
+  --pill-hover-bg: #fff3e0;
+  --pill-hover-text: #c62828;
+  --pill-hover-border: #ff8a65;
+  --pill-add-bg: #fff3cd;
+  --pill-add-text: #b15b00;
+  --pill-add-border: #b15b00;
+  --pill-add-hover-bg: #ffeb99;
+  --pill-add-hover-text: #a55000;
+  --pill-add-hover-border: #a55000;
+  --button-bg: #ffca28;
+  --button-bg-hover: #fbc02d;
+  --button-shadow: rgba(255, 179, 0, 0.4);
+}
+
+/* Cane Corso Theme */
+.cane-theme {
+  --bg-color: #1c1c1c;
+  --card-bg: #2b2b2b;
+  --text-color: #ffffff;
+  --subtitle-color: #cccccc;
+  --pill-bg: #444;
+  --pill-text: #fff;
+  --pill-border: #888;
+  --pill-hover-bg: #331111;
+  --pill-hover-text: #ff4d4d;
+  --pill-hover-border: #ff8080;
+  --pill-add-bg: #666;
+  --pill-add-text: #ffffff;
+  --pill-add-border: #aaa;
+  --pill-add-hover-bg: #555;
+  --pill-add-hover-text: #ffffff;
+  --pill-add-hover-border: #ccc;
+  --button-bg: #444;
+  --button-bg-hover: #555;
+  --button-shadow: rgba(255, 255, 255, 0.15);
+}
+
+/* Border Collie Theme */
+.border-collie-theme {
+  --bg-color: #f1f1f1;
+  --card-bg: #ffffff;
+  --text-color: #1c1c1c;
+  --subtitle-color: #666;
+  --pill-bg: #e6e6e6;
+  --pill-text: #1c1c1c;
+  --pill-border: #999;
+  --pill-hover-bg: #333;
+  --pill-hover-text: #fff;
+  --pill-hover-border: #666;
+  --pill-add-bg: #dddddd;
+  --pill-add-text: #000;
+  --pill-add-border: #888;
+  --pill-add-hover-bg: #ccc;
+  --pill-add-hover-text: #000;
+  --pill-add-hover-border: #555;
+  --button-bg: #333;
+  --button-bg-hover: #1c1c1c;
+  --button-shadow: rgba(0, 0, 0, 0.2);
+}
+
+/* Husky Theme */
+.husky-theme {
+  --bg-color: #e6f2ff;
+  --card-bg: #ffffff;
+  --text-color: #1a1a1a;
+  --subtitle-color: #555;
+  --pill-bg: #dceeff;
+  --pill-text: #003366;
+  --pill-border: #66a3ff;
+  --pill-hover-bg: #ccf2ff;
+  --pill-hover-text: #005580;
+  --pill-hover-border: #3399ff;
+  --pill-add-bg: #f0f8ff;
+  --pill-add-text: #003366;
+  --pill-add-border: #66a3ff;
+  --pill-add-hover-bg: #e0f0ff;
+  --pill-add-hover-text: #002244;
+  --pill-add-hover-border: #3385ff;
+  --button-bg: #3399ff;
+  --button-bg-hover: #007acc;
+  --button-shadow: rgba(0, 102, 204, 0.3);
+}
+
+/* Labrador Theme (note lowercase correction if needed in HTML) */
+.Labrador-theme {
+  --bg-color: #f3f0ec;
+  --card-bg: #fffaf7;
+  --text-color: #4b2e1f;
+  --subtitle-color: #6e4d3c;
+  --pill-bg: #e8ddd3;
+  --pill-text: #4b2e1f;
+  --pill-border: #bfa68a;
+  --pill-hover-bg: #f3e3d3;
+  --pill-hover-text: #5d3624;
+  --pill-hover-border: #d2b08c;
+  --pill-add-bg: #e5d5c5;
+  --pill-add-text: #4b2e1f;
+  --pill-add-border: #a1866a;
+  --pill-add-hover-bg: #ddc9b9;
+  --pill-add-hover-text: #3a2518;
+  --pill-add-hover-border: #8c6b53;
+  --button-bg: #6f4e37;
+  --button-bg-hover: #593c2a;
+  --button-shadow: rgba(111, 78, 55, 0.3);
+}
+
+/* ------------------------------
+   Base Layout and Typography
+--------------------------------*/
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--bg-color);
+  margin: 0;
+  padding: 2rem;
+  color: var(--text-color);
+}
+
+h2, h3, h4 {
+  margin-top: 0;
+}
+
+/* ----------------------------------
+   Profile & Recommendation Containers
+------------------------------------*/
+
+.pet-profile .profile-card,
+.food-recommendations .food-card {
+  background-color: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Space below pet profile card */
+.pet-profile .profile-card {
+  margin-bottom: 3rem;
+}
+
+/* Flex layout for profile card */
+.profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  max-width: 1000px;
+  margin: 0 auto 3rem;
+  position: relative; /* Needed for positioning edit button */
+}
+
+/* Rounded pet image with shadow */
+.pet-photo {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Profile details on right */
+.pet-details {
+  flex: 1;
+}
+
+/* Edit button styling (top-right) */
+.edit-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: var(--button-bg, #0057ff);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px var(--button-shadow, rgba(0, 87, 255, 0.25));
+  z-index: 2;
+}
+
+.edit-btn:hover {
+  background-color: var(--button-bg-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px var(--button-shadow, rgba(0, 87, 255, 0.35));
+}
+
+/* Allergy pills in profile display */
+.allergies .pill {
+  display: inline-block;
+  background-color: var(--pill-bg);
+  color: var(--pill-text);
+  border: 1px solid var(--pill-border);
+  border-radius: var(--pill-radius);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ------------------------------------
+   Recommendation Section Styling
+-------------------------------------*/
+
+.food-recommendations {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.food-recommendations h3 {
+  font-size: 1.8rem;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+}
+
+.food-recommendations .food-card h4,
+.food-recommendations p {
+  color: var(--text-color);
+  margin-bottom: 0.3rem;
+}
+
+.food-recommendations p {
+  color: var(--subtitle-color);
+  margin: 0.2rem 0;
+}
+
+/* Grid layout for cards */
+.food-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card styling for food items */
+.food-card {
+  background-color: var(--card-bg);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.food-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Thumbnail image styling */
+.food-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Food info section */
+.food-info h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-color);
+}
+
+.food-info .price {
+  color: var(--button-bg);
+  font-weight: bold;
+  margin: 0.3rem 0 0.5rem;
+}
+
+.food-info .price span {
+  font-weight: normal;
+  font-size: 0.9rem;
+  color: var(--subtitle-color);
+  margin-left: 0.3rem;
+}
+
+.food-info .why {
+  font-size: 0.9rem;
+  margin-bottom: 0.6rem;
+  color: var(--subtitle-color);
+}
+
+/* Tag list layout */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Individual tag pill */
+.tag {
+  background: var(--pill-bg);
+  color: var(--pill-text);
+  border: 1px solid var(--pill-border);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Display-only pills (non-interactive) */
+.pill.display-only {
+  pointer-events: none;
+  position: relative;
+}
+
+.pill.display-only .close-btn {
+  display: none !important;
+}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pet Profile & Food Recommendations</title>
+
+  <!-- External stylesheet for theming and layout -->
+  <link rel="stylesheet" href="css/recommendation.css" />
+</head>
+<body>
+
+  <!-- ===============================
+       Pet Profile Summary Section
+       =============================== -->
+  <section class="pet-profile">
+    <div class="profile-card">
+      <!-- Edit Button (redirect or repopulate form page) -->
+      <button class="edit-btn">Edit</button>
+
+      <!-- Dynamic Pet Details -->
+      <div class="pet-details">
+        <h2 id="pet-name"></h2>
+        <p><strong>Breed:</strong> <span id="pet-breed"></span></p>
+        <p><strong>Age:</strong> <span id="pet-age"></span></p>
+        <p><strong>Activity Level:</strong> <span id="pet-activity"></span></p>
+        <p><strong>Dietary Goal:</strong> <span id="pet-goal"></span></p>
+        <p><strong>Allergies:</strong></p>
+        <div class="allergies" id="allergy-list"></div> <!-- Allergy tags will be injected here -->
+      </div>
+
+      <!-- Static Pet Image (you can later make this dynamic too) -->
+      <img class="pet-photo" src="images/raw.PNG" alt="Kratus the dog" />
+    </div>
+  </section>
+
+  <!-- =====================================
+       Dry Food Recommendation Section
+       ===================================== -->
+  <section class="food-recommendations">
+    <h3>Recommended Dry Food Options</h3>
+
+    <div class="food-grid">
+      <!-- Food Card #1 -->
+      <div class="food-card">
+        <img src="https://via.placeholder.com/80" alt="CanineCrunch Ultra" />
+        <div class="food-info">
+          <h4>CanineCrunch Ultra</h4>
+          <p class="price">$42.99 / 10lb <span>($4.30/lb)</span></p>
+          <p class="why">Great for skin health, rich in Omega-3, gentle on stomach.</p>
+          <div class="tags">
+            <span class="tag">Grain-Free</span>
+            <span class="tag">Omega-3</span>
+            <span class="tag">Skin Support</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Food Card #2 -->
+      <div class="food-card">
+        <img src="https://via.placeholder.com/80" alt="NatureBite Senior Formula" />
+        <div class="food-info">
+          <h4>NatureBite Senior Formula</h4>
+          <p class="price">$38.50 / 12lb <span>($3.21/lb)</span></p>
+          <p class="why">Joint support for aging dogs, easy-to-digest formula.</p>
+          <div class="tags">
+            <span class="tag">Senior</span>
+            <span class="tag">Low Fat</span>
+            <span class="tag">Joint Care</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Food Card #3 -->
+      <div class="food-card">
+        <img src="https://via.placeholder.com/80" alt="WildPack Active K9" />
+        <div class="food-info">
+          <h4>WildPack Active K9</h4>
+          <p class="price">$49.00 / 14lb <span>($3.50/lb)</span></p>
+          <p class="why">High-protein formula for active and working dogs.</p>
+          <div class="tags">
+            <span class="tag">High Energy</span>
+            <span class="tag">Large Breed</span>
+            <span class="tag">No Fillers</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Food Card #4 -->
+      <div class="food-card">
+        <img src="https://via.placeholder.com/80" alt="DailyBalance All Life Stages" />
+        <div class="food-info">
+          <h4>DailyBalance All Life Stages</h4>
+          <p class="price">$29.99 / 10lb <span>($3.00/lb)</span></p>
+          <p class="why">Balanced nutrition for puppies, adults, and seniors.</p>
+          <div class="tags">
+            <span class="tag">All Ages</span>
+            <span class="tag">Vet Approved</span>
+            <span class="tag">Digestive Health</span>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- End .food-grid -->
+  </section>
+
+  <!-- =======================
+       JavaScript Loader
+       ======================= -->
+  <script src="js/recommendation.js"></script>
+</body>
+</html>
