@@ -1,36 +1,3 @@
-// === Dynamic Theme Switching Based on Selected Breed ===
-const breedSelect = document.getElementById("pet-breed");
-
-breedSelect.addEventListener("change", () => {
-  // Remove all existing theme classes to prevent stacking
-  document.body.classList.remove(
-    "golden-theme",
-    "cane-theme",
-    "doberman-theme",
-    "border-collie-theme", 
-    "husky-theme",
-    "labrador-theme"
-  );
-
-  // Add the new theme class based on selected breed
-  const breed = breedSelect.value;
-  if (breed === "Doberman") {
-    document.body.classList.add("doberman-theme");
-  } else if (breed === "Golden Retriever") {
-    document.body.classList.add("golden-theme");
-  } else if (breed === "Cane Corso") {
-    document.body.classList.add("cane-theme");
-  } else if (breed === "Border Collie") {
-    document.body.classList.add("border-collie-theme");
-  } else if (breed === "Husky") {
-    document.body.classList.add("husky-theme");
-  } else if (breed === "Labrador") {
-    document.body.classList.add("labrador-theme");
-  }
-});
-
-// === Allergy Tag Functionality ===
-
 // Get the container and +Add button
 const allergyTags = document.getElementById("allergy-tags");
 const addBtn = document.getElementById("addAllergy");
@@ -60,41 +27,66 @@ function createAllergyPill(label) {
 addBtn.addEventListener("click", () => {
   const allergy = prompt("Enter allergy:");
   if (allergy) {
-    const pill = createAllergyPill(allergy);
-    allergyTags.insertBefore(pill, addBtn);
+    const trimmed = allergy.trim();
+    if (trimmed && ![...document.querySelectorAll('.pill')].some(p => p.textContent.trim() === trimmed)) {
+      const pill = createAllergyPill(trimmed);
+      allergyTags.insertBefore(pill, addBtn);
+    }
   }
 });
 
 // === Form Submission and Data Storage ===
-document.getElementById('pet-form').addEventListener('submit', function(e) {
-  e.preventDefault(); // Prevent page reload on form submission
+document.getElementById('pet-form').addEventListener('submit', function (e) {
+  e.preventDefault(); // Prevent page reload
 
   // Collect form input values
   const name = document.getElementById('pet-name').value.trim();
-  const age = document.getElementById('pet-age').value.trim();
-  const breed = document.getElementById('pet-breed').value;
+  const ageGroup = document.getElementById('pet-age').value.trim();
+  const breedSize = document.getElementById('breed-size').value;
   const activity = document.getElementById('activity-level').value;
   const goal = document.getElementById('dietary-goal').value;
 
-  // Extract allergy labels from pills, ignoring the "+Add" button
+  // Get allergy pills (excluding the "+Add" button)
   const allergyTags = document.querySelectorAll('#allergy-tags .pill:not(.add)');
   const allergies = Array.from(allergyTags).map(pill =>
     pill.childNodes[0]?.nodeValue.trim()
   );
 
-  // Construct object to store all pet data
+  // Construct object for localStorage AND backend
   const petData = {
     name,
-    age,
-    breed,
-    activity,
-    goal,
+    ageGroup,
+    breedSize,
+    activityLevel: activity,
+    weightGoal: goal,
     allergies
   };
 
-  // Save pet profile data to localStorage for use on next page
-  localStorage.setItem('petData', JSON.stringify(petData));
+  // === POST to backend ===
+  fetch('http://localhost:8080/api/pets', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(petData)
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to save pet to backend');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('✅ Pet saved:', data);
 
-  // Redirect to the recommendation page
-  window.location.href = 'recommendation.html';
+      // Also save locally for client-side use
+      localStorage.setItem('petData', JSON.stringify(petData));
+
+      // Then redirect
+      window.location.href = 'recommendation.html';
+    })
+    .catch(error => {
+      console.error('❌ Error saving pet:', error);
+      alert('There was a problem saving your pet profile. Please try again.');
+    });
 });

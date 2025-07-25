@@ -30,24 +30,26 @@
         <!-- Row for Age and Breed -->
         <div class="input-row">
           <!-- Pet Age -->
-          <div class="input-group">
-            <label for="pet-age">Age</label>
-            <input type="number" id="pet-age" placeholder="years" required/>
-          </div>
+        <div class="input-group">
+          <label for="pet-age">Age Group</label>
+          <select id="pet-age" required>
+            <option value="" disabled selected>Select age group</option>
+            <option value="puppy">Puppy (0–1 year)</option>
+            <option value="adult">Adult (1–7 years)</option>
+            <option value="senior">Senior (8+ years)</option>
+          </select>
+        </div>
 
-          <!-- Breed Selection -->
-          <div class="input-group">
-            <label for="pet-breed">Breed</label>
-            <select id="pet-breed" name="breed" required>
-              <option value="">Select breed</option>
-              <option value="Golden Retriever">Golden Retriever</option>
-              <option value="Cane Corso">Cane Corso</option>
-              <option value="Doberman">Doberman</option>
-              <option value="Border Collie">Border Collie</option>
-              <option value="Husky">Husky</option>
-              <option value="Labrador">Labrador</option>
-            </select>
-          </div>
+        <!-- Breed Size Selection -->
+        <div class="input-group">
+          <label for="breed-size">Breed Size</label>
+          <select id="breed-size" name="breedSize" required>
+            <option value="">Select size</option>
+            <option value="small">Small (under 20 lbs / 9 kg)</option>
+            <option value="medium">Medium (20–50 lbs / 9–23 kg)</option>
+            <option value="large">Large (over 50 lbs / 23 kg)</option>
+          </select>
+        </div>
         </div>
 
         <!-- Row for Activity Level and Dietary Goal -->

@@ -10,18 +10,16 @@
 </head>
 <body>
 
-  <!-- ===============================
-       Pet Profile Summary Section
-       =============================== -->
+  <!-- Pet Profile Summary Section -->
   <section class="pet-profile">
     <div class="profile-card">
       <!-- Edit Button (redirect or repopulate form page) -->
-      <button class="edit-btn">Edit</button>
+      <button id="edit-btn" class="edit-btn">Edit</button>
 
       <!-- Dynamic Pet Details -->
       <div class="pet-details">
         <h2 id="pet-name"></h2>
-        <p><strong>Breed:</strong> <span id="pet-breed"></span></p>
+        <p><strong>Breed Size:</strong> <span id="pet-breed"></span></p>
         <p><strong>Age:</strong> <span id="pet-age"></span></p>
         <p><strong>Activity Level:</strong> <span id="pet-activity"></span></p>
         <p><strong>Dietary Goal:</strong> <span id="pet-goal"></span></p>
@@ -34,79 +32,226 @@
     </div>
   </section>
 
-  <!-- =====================================
-       Dry Food Recommendation Section
-       ===================================== -->
+  <!-- Dry Food Recommendation Section -->
   <section class="food-recommendations">
     <h3>Recommended Dry Food Options</h3>
 
-    <div class="food-grid">
-      <!-- Food Card #1 -->
-      <div class="food-card">
-        <img src="https://via.placeholder.com/80" alt="CanineCrunch Ultra" />
-        <div class="food-info">
-          <h4>CanineCrunch Ultra</h4>
-          <p class="price">$42.99 / 10lb <span>($4.30/lb)</span></p>
-          <p class="why">Great for skin health, rich in Omega-3, gentle on stomach.</p>
-          <div class="tags">
-            <span class="tag">Grain-Free</span>
-            <span class="tag">Omega-3</span>
-            <span class="tag">Skin Support</span>
+    <!-- Most Popular Section -->
+    <div class="food-section" id="section-most-popular">
+      <h4>Most Popular</h4>
+      <div class="food-grid">
+        <!-- 3 cards here -->
+        <div class="food-card" data-tags="popular small puppy">
+          <img src="https://via.placeholder.com/80" alt="PuppyPop Starter Bites" />
+          <div class="food-info">
+            <h4>PuppyPop Starter Bites</h4>
+            <p class="price">$36.99 / 8lb <span>($4.62/lb)</span></p>
+            <p class="why">Top-rated soft kibble for small breed puppies starting solid food.</p>
+            <div class="tags">
+              <span class="tag">Popular</span>
+              <span class="tag">Small</span>
+              <span class="tag">Puppy</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="food-card" data-tags="most-popular regular adult">
+          <img src="https://via.placeholder.com/80" alt="BarkWell Daily Crunch" />
+          <div class="food-info">
+            <h4>BarkWell Daily Crunch</h4>
+            <p class="price">$44.99 / 12lb <span>($3.75/lb)</span></p>
+            <p class="why">Customer favorite for balanced nutrition in adult dogs of all types.</p>
+            <div class="tags">
+              <span class="tag">Most Popular</span>
+              <span class="tag">Regular</span>
+              <span class="tag">Adult</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="food-card" data-tags="popular large senior">
+          <img src="https://via.placeholder.com/80" alt="SeniorJoy Giant Blend" />
+          <div class="food-info">
+            <h4>SeniorJoy Giant Blend</h4>
+            <p class="price">$47.50 / 14lb <span>($3.39/lb)</span></p>
+            <p class="why">Top choice for senior large and giant breeds, supports joints and mobility.</p>
+            <div class="tags">
+              <span class="tag">Popular</span>
+              <span class="tag">Large</span>
+              <span class="tag">Senior</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Food Card #2 -->
-      <div class="food-card">
-        <img src="https://via.placeholder.com/80" alt="NatureBite Senior Formula" />
-        <div class="food-info">
-          <h4>NatureBite Senior Formula</h4>
-          <p class="price">$38.50 / 12lb <span>($3.21/lb)</span></p>
-          <p class="why">Joint support for aging dogs, easy-to-digest formula.</p>
-          <div class="tags">
-            <span class="tag">Senior</span>
-            <span class="tag">Low Fat</span>
-            <span class="tag">Joint Care</span>
+    <!-- Best Value Section -->
+    <div class="food-section" id="section-best-value">
+      <h4>Best Value</h4>
+      <div class="food-grid">
+        <!-- 3 cards here -->
+        <!-- Card 1: Puppy + Small -->
+        <div class="food-card" data-tags="puppy small chicken">
+          <img src="https://via.placeholder.com/80" alt="Budget Puppy Bites" />
+          <div class="food-info">
+            <h4>Budget Puppy Bites</h4>
+            <p class="price">$21.99 / 8lb <span>($2.75/lb)</span></p>
+            <p class="why">Great value formula for small breed puppies.</p>
+            <div class="tags">
+              <span class="tag">Puppy</span>
+              <span class="tag">Small</span>
+              <span class="tag">Chicken</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Adult + Regular -->
+        <div class="food-card" data-tags="adult regular beef">
+          <img src="https://via.placeholder.com/80" alt="Saver Blend Adult Formula" />
+          <div class="food-info">
+            <h4>Saver Blend Adult Formula</h4>
+            <p class="price">$27.99 / 12lb <span>($2.33/lb)</span></p>
+            <p class="why">Affordable, balanced meal for adult dogs of all sizes.</p>
+            <div class="tags">
+              <span class="tag">Adult</span>
+              <span class="tag">Regular</span>
+              <span class="tag">Beef</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Senior + Large + Low Fat -->
+        <div class="food-card" data-tags="senior large salmon low-fat">
+          <img src="https://via.placeholder.com/80" alt="Value Senior Salmon" />
+          <div class="food-info">
+            <h4>Value Senior Salmon</h4>
+            <p class="price">$25.99 / 10lb <span>($2.60/lb)</span></p>
+            <p class="why">Low-fat recipe perfect for large senior dogs.</p>
+            <div class="tags">
+              <span class="tag">Senior</span>
+              <span class="tag">Large</span>
+              <span class="tag">Low Fat</span>
+              <span class="tag">Salmon</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Food Card #3 -->
-      <div class="food-card">
-        <img src="https://via.placeholder.com/80" alt="WildPack Active K9" />
-        <div class="food-info">
-          <h4>WildPack Active K9</h4>
-          <p class="price">$49.00 / 14lb <span>($3.50/lb)</span></p>
-          <p class="why">High-protein formula for active and working dogs.</p>
-          <div class="tags">
-            <span class="tag">High Energy</span>
-            <span class="tag">Large Breed</span>
-            <span class="tag">No Fillers</span>
+    <!-- Highest Protein Section (conditional) -->
+    <div class="food-section" id="section-high-protein" style="display: none;">
+      <h4>Highest Protein</h4>
+      <div class="food-grid">
+        <!-- 3 cards here -->
+        <div class="food-card" data-tags="adult regular high-protein beef">
+          <img src="https://via.placeholder.com/80" alt="MuscleFuel Adult Formula" />
+          <div class="food-info">
+            <h4>MuscleFuel Adult Formula</h4>
+            <p class="price">$34.99 / 10lb <span>($3.50/lb)</span></p>
+            <p class="why">Packed with protein to support muscle development in active adult dogs.</p>
+            <div class="tags">
+              <span class="tag">Adult</span>
+              <span class="tag">Regular</span>
+              <span class="tag">High Protein</span>
+              <span class="tag">Beef</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Puppy + Small + High Protein -->
+        <div class="food-card" data-tags="puppy small high-protein turkey">
+          <img src="https://via.placeholder.com/80" alt="GrowthMax Puppy Boost" />
+          <div class="food-info">
+            <h4>GrowthMax Puppy Boost</h4>
+            <p class="price">$32.50 / 8lb <span>($4.06/lb)</span></p>
+            <p class="why">High-protein formula specially designed for growing small breed puppies.</p>
+            <div class="tags">
+              <span class="tag">Puppy</span>
+              <span class="tag">Small</span>
+              <span class="tag">High Protein</span>
+              <span class="tag">Turkey</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Senior + Large + High Protein -->
+        <div class="food-card" data-tags="senior large high-protein lamb joint-support">
+          <img src="https://via.placeholder.com/80" alt="PowerAge Senior Strength" />
+          <div class="food-info">
+            <h4>PowerAge Senior Strength</h4>
+            <p class="price">$36.99 / 12lb <span>($3.08/lb)</span></p>
+            <p class="why">Extra protein and joint support for active senior large breeds.</p>
+            <div class="tags">
+              <span class="tag">Senior</span>
+              <span class="tag">Large</span>
+              <span class="tag">High Protein</span>
+              <span class="tag">Lamb</span>
+              <span class="tag">Joint Support</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Food Card #4 -->
-      <div class="food-card">
-        <img src="https://via.placeholder.com/80" alt="DailyBalance All Life Stages" />
-        <div class="food-info">
-          <h4>DailyBalance All Life Stages</h4>
-          <p class="price">$29.99 / 10lb <span>($3.00/lb)</span></p>
-          <p class="why">Balanced nutrition for puppies, adults, and seniors.</p>
-          <div class="tags">
-            <span class="tag">All Ages</span>
-            <span class="tag">Vet Approved</span>
-            <span class="tag">Digestive Health</span>
+    <!-- Low Fat Formula (conditional) -->
+    <div class="food-section" id="section-low-fat" style="display: none;">
+      <h4>Low Fat Formula</h4>
+      <div class="food-grid">
+        <!-- 3 cards here -->
+        <!-- Card 1: Adult + Regular + Low Fat -->
+        <div class="food-card" data-tags="adult regular low-fat chicken">
+          <img src="https://via.placeholder.com/80" alt="LeanCore Adult Maintenance" />
+          <div class="food-info">
+            <h4>LeanCore Adult Maintenance</h4>
+            <p class="price">$28.49 / 10lb <span>($2.85/lb)</span></p>
+            <p class="why">Low-fat recipe for adult dogs that need to maintain a healthy weight.</p>
+            <div class="tags">
+              <span class="tag">Adult</span>
+              <span class="tag">Regular</span>
+              <span class="tag">Low Fat</span>
+              <span class="tag">Chicken</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Senior + Large + Low Fat -->
+        <div class="food-card" data-tags="senior large low-fat turkey digestive-health">
+          <img src="https://via.placeholder.com/80" alt="GoldenYears Lean Formula" />
+          <div class="food-info">
+            <h4>GoldenYears Lean Formula</h4>
+            <p class="price">$30.99 / 12lb <span>($2.58/lb)</span></p>
+            <p class="why">Low-fat and easy to digest — perfect for senior large-breed dogs.</p>
+            <div class="tags">
+              <span class="tag">Senior</span>
+              <span class="tag">Large</span>
+              <span class="tag">Low Fat</span>
+              <span class="tag">Turkey</span>
+              <span class="tag">Digestive Health</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Puppy + Small + Low Fat -->
+        <div class="food-card" data-tags="puppy small low-fat salmon grain-free">
+          <img src="https://via.placeholder.com/80" alt="SlimStart Puppy Formula" />
+          <div class="food-info">
+            <h4>SlimStart Puppy Formula</h4>
+            <p class="price">$33.50 / 8lb <span>($4.19/lb)</span></p>
+            <p class="why">Grain-free, low-fat option for small-breed puppies with weight concerns.</p>
+            <div class="tags">
+              <span class="tag">Puppy</span>
+              <span class="tag">Small</span>
+              <span class="tag">Low Fat</span>
+              <span class="tag">Salmon</span>
+              <span class="tag">Grain Free</span>
+            </div>
           </div>
         </div>
       </div>
-
-    </div> <!-- End .food-grid -->
+    </div>
   </section>
 
-  <!-- =======================
-       JavaScript Loader
-       ======================= -->
+  <!-- JavaScript Loader -->
   <script src="js/recommendation.js"></script>
 </body>
 </html>
