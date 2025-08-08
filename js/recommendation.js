@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("✅ recommendation.js is loaded");
+
   const petData = JSON.parse(localStorage.getItem('petData'));
   if (!petData) return;
 
@@ -60,9 +62,16 @@ document.addEventListener('DOMContentLoaded', () => {
   hideEmptySections();
 
   // Edit button
-  document.getElementById('edit-btn')?.addEventListener('click', () => {
-    window.location.href = 'index.html';
-  });
+  const editBtn = document.getElementById('edit-btn');
+  if (editBtn) {
+    console.log("✅ Edit button loaded properly.");
+    editBtn.addEventListener('click', () => {
+      console.log("👉 Edit button clicked.");
+      window.location.href = 'index.html';
+    });
+  } else {
+    console.error("❌ Edit button NOT found.");
+  }
 });
 
 function filterFoodCards(petData) {
@@ -92,10 +101,13 @@ function filterFoodCards(petData) {
 function hideEmptySections() {
   ['section-most-popular', 'section-best-value', 'section-low-fat', 'section-high-protein'].forEach(id => {
     const section = document.getElementById(id);
-    const visible = section?.querySelectorAll('.food-card:not([style*="display: none"])') || [];
+    if (!section) return; // ← fix the crash
+
+    const visible = section.querySelectorAll('.food-card:not([style*="display: none"])');
     section.style.display = visible.length ? 'block' : 'none';
   });
 }
+
 
 function createDisplayOnlyPill(label) {
   const pill = document.createElement("span");
