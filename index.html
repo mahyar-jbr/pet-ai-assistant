@@ -11,15 +11,15 @@
   <!-- Link to External CSS Stylesheet -->
   <link rel="stylesheet" href="css/form.css" />
 </head>
-<body>
+<body> 
   <!-- Outer Container for Centered Layout -->
   <div class="container"> 
     <!-- Card UI for Form Styling -->
     <div class="form-card">
       <!-- Main Title -->
-      <h1>Enter Your Dog’s Info</h1>
+      <h1>Enter Your Dog's Info</h1>
       <!-- Subtitle with Guidance -->
-      <p class="subtitle">We’ll personalize food recommendations based on this.</p>
+      <p class="subtitle">Let's create a personalized profile to find the perfect food for your furry friend</p>
 
       <!-- Pet Profile Form -->
       <form id="pet-form">
@@ -77,12 +77,9 @@
           </div>
         </div>
 
-        <!-- Allergy Tags Section -->
-        <label>Allergies</label>
-        <div class="allergy-tags" id="allergy-tags">
-          <!-- +Add Pill Button (Dynamically Adds Tags) -->
-          <span class="pill add" id="addAllergy">+Add</span>
-        </div>
+        <!-- Allergy Input Section -->
+        <label for="pet-allergies">Known Allergies (Optional)</label>
+        <input type="text" id="pet-allergies" placeholder="e.g., chicken, wheat, dairy" />
 
         <!-- Form Submission Button -->
         <button type="submit" class="submit-btn">Show Food Recommendation</button>

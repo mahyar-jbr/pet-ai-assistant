@@ -1,36 +1,33 @@
-// Get the container and +Add button
-const allergyTags = document.getElementById("allergy-tags");
-const addBtn = document.getElementById("addAllergy");
+// === Pre-populate form with existing data (for Edit mode) ===
+window.addEventListener('DOMContentLoaded', function() {
+  const existingData = localStorage.getItem('petData');
 
-/**
- * Creates a removable allergy pill element with close (×) button
- * @param {string} label - The text content of the pill
- * @returns {HTMLElement} - The DOM element representing the pill
- */
-function createAllergyPill(label) {
-  const pill = document.createElement("span");
-  pill.className = "pill removable";
-  pill.textContent = label;
+  if (existingData) {
+    try {
+      const petData = JSON.parse(existingData);
 
-  const close = document.createElement("span");
-  close.className = "close-btn";
-  close.innerHTML = "&times;";
-  pill.appendChild(close);
-
-  // Enable removal on click
-  close.addEventListener("click", () => pill.remove());
-
-  return pill;
-}
-
-// Show prompt and add new allergy pill dynamically
-addBtn.addEventListener("click", () => {
-  const allergy = prompt("Enter allergy:");
-  if (allergy) {
-    const trimmed = allergy.trim();
-    if (trimmed && ![...document.querySelectorAll('.pill')].some(p => p.textContent.trim() === trimmed)) {
-      const pill = createAllergyPill(trimmed);
-      allergyTags.insertBefore(pill, addBtn);
+      // Pre-fill all form fields
+      if (petData.name) {
+        document.getElementById('pet-name').value = petData.name;
+      }
+      if (petData.ageGroup) {
+        document.getElementById('pet-age').value = petData.ageGroup;
+      }
+      if (petData.breedSize) {
+        document.getElementById('breed-size').value = petData.breedSize;
+      }
+      if (petData.activityLevel) {
+        document.getElementById('activity-level').value = petData.activityLevel;
+      }
+      if (petData.weightGoal) {
+        document.getElementById('dietary-goal').value = petData.weightGoal;
+      }
+      if (petData.allergies && petData.allergies.length > 0) {
+        // Join allergies array with commas for display
+        document.getElementById('pet-allergies').value = petData.allergies.join(', ');
+      }
+    } catch (error) {
+      console.error('Error loading existing pet data:', error);
     }
   }
 });
@@ -46,11 +43,11 @@ document.getElementById('pet-form').addEventListener('submit', function (e) {
   const activity = document.getElementById('activity-level').value;
   const goal = document.getElementById('dietary-goal').value;
 
-  // Get allergy pills (excluding the "+Add" button)
-  const allergyTags = document.querySelectorAll('#allergy-tags .pill:not(.add)');
-  const allergies = Array.from(allergyTags).map(pill =>
-    pill.childNodes[0]?.nodeValue.trim()
-  );
+  // Parse allergies from text input (comma-separated)
+  const allergyInput = document.getElementById('pet-allergies').value.trim();
+  const allergies = allergyInput
+    ? allergyInput.split(',').map(a => a.trim().toLowerCase()).filter(Boolean)
+    : [];
 
   // Construct object for localStorage AND backend
   const petData = {

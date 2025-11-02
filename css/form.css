@@ -15,7 +15,7 @@
   /* "Add Allergy" pill styles */
   --pill-add-bg: #e0efff;
   --pill-add-text: #0073e6;
-  --pill-add-border: #0073e6; 
+  --pill-add-border: #0073e6;
   --pill-add-hover-bg: #d0e8ff;
   --pill-add-hover-text: #0057cc;
   --pill-add-hover-border: #0057cc;
@@ -41,173 +41,262 @@
 
 body {
   margin: 0;
-  background-color: var(--bg-color);
+  background: linear-gradient(135deg, #e3f2ff 0%, #f0f7ff 50%, #fff 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  padding: 40px 20px;
   transition: background-color 0.4s ease;
 }
 
 /* Form container */
 .container {
   width: 100%;
-  max-width: 520px;
-  padding: 20px;
+  max-width: 560px;
 }
 
 /* Card style for the form */
 .form-card {
-  background: var(--card-bg);
-  padding: 30px;
-  border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.4s ease;
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  padding: 48px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, 0.12), 0 2px 8px rgba(0, 87, 255, 0.08);
+  border: 2px solid rgba(0, 87, 255, 0.1);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.form-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--button-bg) 0%, #0041cc 100%);
+  border-radius: 24px 24px 0 0;
 }
 
 /* Typography */
 h1 {
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: color 0.4s ease;
+}
+
+h1::before {
+  content: '🐕';
+  font-size: 32px;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 32px;
+  line-height: 1.5;
+  transition: color 0.4s ease;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
   color: var(--text-color);
   margin-bottom: 8px;
   transition: color 0.4s ease;
 }
 
-.subtitle {
-  font-size: 14px;
-  color: var(--subtitle-color);
-  margin-bottom: 20px;
-  transition: color 0.4s ease;
+label::before {
+  font-size: 18px;
 }
 
-label {
-  display: block;
-  font-weight: 600;
-  color: var(--text-color);
-  margin-bottom: 6px;
-  transition: color 0.4s ease;
-}
+/* Label icons */
+label[for="pet-name"]::before { content: '🏷️'; }
+label[for="pet-age"]::before { content: '📅'; }
+label[for="breed-size"]::before { content: '📏'; }
+label[for="activity-level"]::before { content: '⚡'; }
+label[for="dietary-goal"]::before { content: '🎯'; }
+label[for="pet-allergies"]::before { content: '🚫'; }
 
 /* Input + Select styles */
 input[type="text"],
 select {
   width: 100%;
-  height: 48px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  margin-bottom: 20px;
+  height: 52px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  font-size: 15px;
+  margin-bottom: 28px;
   background-color: #fff;
-  transition: border-color 0.4s ease, color 0.4s ease, background-color 0.4s ease;
+  color: var(--text-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+input[type="text"]::placeholder {
+  color: #aaa;
+  font-weight: 400;
+}
+
+input[type="text"]:hover,
+select:hover {
+  border-color: rgba(0, 87, 255, 0.3);
+  background-color: #fafcff;
+}
+
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--button-bg);
+  box-shadow: 0 0 0 4px rgba(0, 87, 255, 0.12), 0 4px 12px rgba(0, 87, 255, 0.15);
+  background-color: #f5faff;
+  transform: translateY(-1px);
 }
 
 /* Custom select arrow styling */
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 2l4 4 4-4' stroke='%23000' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-  background-position: right 16px center;
+  background-image: url("data:image/svg+xml,%3Csvg width='14' height='9' viewBox='0 0 14 9' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 2l5 5 5-5' stroke='%230057ff' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 18px center;
   background-repeat: no-repeat;
-  background-size: 12px 8px;
+  background-size: 14px 9px;
   cursor: pointer;
-}
-
-select:focus {
-  outline: none;
-  border-color: var(--button-bg);
-  box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.2);
-  background-color: #f5faff;
+  padding-right: 45px;
 }
 
 /* Form layout rows */
 .input-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 8px;
 }
 
 /* Responsive groups inside a row */
 .input-group {
   flex: 1;
-  min-width: 45%;
+  min-width: 220px;
 }
 
-/* Allergy pill container */
-.allergy-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-  margin-bottom: 30px;
+.input-group label {
+  margin-bottom: 8px;
 }
+
+.input-group select,
+.input-group input {
+  margin-bottom: 0;
+}
+
 
 /* ============================
    PILL STYLES
    ============================ */
 .pill {
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 999px;
   font-size: 14px;
+  font-weight: 500;
   background-color: var(--pill-bg);
   color: var(--pill-text);
-  border: 1px solid var(--pill-border);
-  display: inline-block;
+  border: 2px solid var(--pill-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 87, 255, 0.1);
 }
 
 /* Special styling for "Add" pill */
 .pill.add {
-  background-color: var(--pill-add-bg);
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
   color: var(--pill-add-text);
-  border: 1px dashed var(--pill-add-border);
+  border: 2px dashed var(--pill-add-border);
   cursor: pointer;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+
+.pill.add::before {
+  content: '+ ';
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .pill.add:hover {
-  background-color: var(--pill-add-hover-bg);
+  background: linear-gradient(135deg, #e3f2ff 0%, #f0f7ff 100%);
   color: var(--pill-add-hover-text);
   border-color: var(--pill-add-hover-border);
-  transform: scale(1.06);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-width: 2px;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.25);
 }
 
-/* Removable pill hover animation */
+.pill.add:active {
+  transform: translateY(0) scale(1.02);
+}
+
+/* Removable pill styling */
+.pill.removable {
+  padding-right: 14px;
+  background: linear-gradient(135deg, #dceeff 0%, #f0f7ff 100%);
+}
+
 .pill.removable:hover {
-  background-color: var(--pill-hover-bg);
+  background: linear-gradient(135deg, #ffe6e6 0%, #fff0f0 100%);
   color: var(--pill-hover-text);
   border-color: var(--pill-hover-border);
-  transform: scale(1.05);
-  box-shadow: 0 2px 6px rgba(255, 0, 0, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(255, 0, 0, 0.2);
 }
 
 /* Close "×" button for pills */
 .pill .close-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 18px;
-  height: 18px;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: red;
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
   color: white;
   font-weight: bold;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 14px;
+  line-height: 22px;
   text-align: center;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  transform: scale(0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 3px 8px rgba(255, 0, 0, 0.3);
+  transform: scale(0.7) rotate(0deg);
+  border: 2px solid white;
 }
 
 .pill.removable:hover .close-btn {
   opacity: 1;
   pointer-events: auto;
-  transform: scale(1);
+  transform: scale(1) rotate(90deg);
+}
+
+.pill .close-btn:hover {
+  transform: scale(1.15) rotate(90deg);
+  background: linear-gradient(135deg, #ff0000 0%, #990000 100%);
+}
+
+.pill .close-btn:active {
+  transform: scale(0.95) rotate(90deg);
 }
 
 /* ============================
@@ -215,37 +304,204 @@ select:focus {
    ============================ */
 .submit-btn {
   width: 100%;
-  background-color: var(--button-bg);
+  background: linear-gradient(135deg, var(--button-bg) 0%, #0041cc 100%);
   color: white;
-  padding: 14px;
+  padding: 16px 24px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 700;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
 }
 
-button:hover {
-  background-color: var(--button-bg-hover);
-  box-shadow: 0 0 10px var(--button-shadow);
-  transform: scale(1.02);
+.submit-btn::before {
+  content: '🐾';
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #0041cc 0%, #003399 100%);
+  box-shadow: 0 6px 24px rgba(0, 87, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.submit-btn:hover::before {
+  transform: scale(1.2) rotate(20deg);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 12px rgba(0, 87, 255, 0.3);
+}
+
+.submit-btn:active::after {
+  width: 300px;
+  height: 300px;
 }
 
 /* Number input styling (no spinners) */
 input[type="number"] {
   appearance: none;
   -moz-appearance: textfield;
-  font-size: 1rem;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  font-size: 15px;
+  padding: 14px 18px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  border-radius: 14px;
   width: 100%;
   box-sizing: border-box;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ============================
+   RESPONSIVE DESIGN
+   ============================ */
+@media (max-width: 600px) {
+  .form-card {
+    padding: 36px 28px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  h1::before {
+    font-size: 28px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .input-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .input-group {
+    min-width: 100%;
+  }
+
+  .input-group select,
+  .input-group input {
+    margin-bottom: 24px;
+  }
+
+  label {
+    font-size: 13px;
+  }
+
+  input[type="text"],
+  select {
+    height: 50px;
+    font-size: 14px;
+  }
+
+  .submit-btn {
+    font-size: 15px;
+    padding: 15px 20px;
+  }
+}
+
+@media (max-width: 400px) {
+  body {
+    padding: 20px 10px;
+  }
+
+  .form-card {
+    padding: 24px 18px;
+    border-radius: 20px;
+  }
+
+  .pill {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .pill.add {
+    padding: 8px 16px;
+  }
+}
+
+/* ============================
+   ACCESSIBILITY & FOCUS STATES
+   ============================ */
+*:focus-visible {
+  outline: 3px solid rgba(0, 87, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.submit-btn:disabled {
+  background: linear-gradient(135deg, #ccc 0%, #999 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.submit-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* ============================
+   ANIMATIONS
+   ============================ */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-card {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading state for form submission */
+.submit-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.submit-btn.loading::before {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
