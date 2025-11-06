@@ -1,0 +1,39 @@
+# FastAPI Backend Dependencies for Pet AI Assistant
+
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# MongoDB Async Driver
+motor==3.3.2
+pymongo==4.6.1
+
+# Data Validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# HTTP Requests
+requests==2.31.0
+
+# CORS Support (included in FastAPI but explicit listing)
+# Already included in FastAPI
+
+# Optional but Recommended
+# Email validation
+email-validator==2.1.0
+
+# For future AI/ML features (optional for now, uncomment when needed)
+# openai==1.7.0
+# langchain==0.1.0
+# anthropic==0.8.0
+
+# Web Scraping (Phase 8)
+beautifulsoup4==4.12.3
+lxml==5.1.0
+
+# For future data processing (optional for now, uncomment when needed)
+# pandas==2.1.4
+# numpy==1.26.3

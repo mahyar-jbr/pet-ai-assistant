@@ -1,0 +1,18 @@
+/* App styles - keeping it minimal since page-specific styles are in their own CSS files */
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #666;
+}
+
+.error {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #ff4444;
+  background: #ffe6e6;
+  border-radius: 12px;
+  margin: 20px;
+}
