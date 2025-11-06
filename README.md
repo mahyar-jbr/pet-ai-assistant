@@ -52,7 +52,7 @@ Pet-AI-Assistant/
 │   ├── test_scraper.py            ← Scraper testing utilities
 │   ├── requirements.txt           ← Python dependencies
 │   ├── .env.example               ← Environment variables template
-│   └── README.md                  ← Backend documentation
+│   └── .gitignore                 ← Backend-specific gitignore
 │
 ├── archive/                  ← Old frontend (vanilla JS) & Java backend (gitignored)
 └── README.md                 ← This file
