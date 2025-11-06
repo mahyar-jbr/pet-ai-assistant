@@ -2,15 +2,17 @@
 
 This directory contains web scrapers for collecting dog food product data from various brand websites.
 
-## Phase 8: Web Scraping & Data Expansion
+## Phase 2: Web Scraping & Data Expansion
 
 **Objective:** Automate large-scale product data collection to expand from ~10 to 100+ products.
 
 ## Current Scrapers
 
-### Orijen Scraper (`orijen_scraper.py`)
+### 1. Orijen Scraper (`orijen_scraper.py`) ✅
 
 Scrapes dog food products from [orijenpetfoods.com](https://www.orijenpetfoods.com).
+
+**Status:** Complete - Successfully scraped 11 Orijen products
 
 **Features:**
 - Scrapes all dog food products from the product listing
@@ -29,6 +31,28 @@ Scrapes dog food products from [orijenpetfoods.com](https://www.orijenpetfoods.c
 - Product images
 - AAFCO nutritional adequacy statement
 - Tags (puppy, adult, grain-free, high-protein, etc.)
+
+### 2. PetValu Scraper (`petvalu_scraper.py`) 🚧
+
+Scrapes dog food products from [petvalu.ca](https://www.petvalu.ca).
+
+**Status:** In Development - Framework complete, needs testing
+
+**Features:**
+- Scrapes dry dog food products from PetValu Canada
+- Extracts product names, brands, and prices
+- Captures product images and URLs
+- Collects available sizes and prices per size
+- Respectful scraping with configurable delays
+
+**Data Collected:**
+- Product name and brand
+- Prices for different bag sizes
+- Product images
+- Product URLs
+- Available sizes (kg/lb)
+
+**Note:** This is a retailer scraper (focuses on prices) vs brand scraper (focuses on nutrition). Use in combination with brand scrapers for complete data.
 
 ## Usage
 
