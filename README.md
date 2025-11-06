@@ -1,18 +1,19 @@
 # 🐾 Pet AI Assistant
 
-**Pet AI Assistant** is a modern full-stack web application that helps dog owners build rich pet profiles and discover tailored food recommendations. Built with **React + Vite** frontend and **Python FastAPI** backend, connected to **MongoDB** for data persistence.
+**Pet AI Assistant** is a modern full-stack web application that helps dog owners build personalized pet profiles and discover tailored food recommendations.  
+It’s built with a **React + Vite** frontend and a **FastAPI + MongoDB** backend, powered by custom **web scrapers** that collect real product data from multiple sources.
 
 ---
 
 ## ✨ Features
 
-- 🐶 **Interactive Pet Profile Form** - Age group, breed size, activity level, dietary goals, and dynamic allergy pills
-- 🧠 **Intelligent Recommendation Engine** - Advanced scoring algorithm with hard filters (allergies, kibble size, life stage)
-- 💾 **Automatic State Management** - React hooks with localStorage fallback and automatic cleanup
-- 📊 **Rich Food Cards** - Nutrition indicators, ingredient lists, and compatibility badges
-- 🎨 **Modern UI** - Beautiful gradient designs with smooth animations
-- ⚡ **Fast & Responsive** - Vite HMR for instant development feedback
-- 🔄 **RESTful API** - Clean Python FastAPI backend with MongoDB integration
+- 🐶 **Interactive Pet Profile Form** – Age group, breed size, activity level, dietary goals, and dynamic allergy pills  
+- 🧠 **Intelligent Recommendation Engine** – Advanced scoring algorithm with hard filters (allergies, kibble size, life stage)  
+- 💾 **Automatic State Management** – React hooks with localStorage fallback and automatic cleanup 
+- 📊 **Rich Food Cards** – Nutrition indicators, ingredient lists, and compatibility badges  
+- 🎨 **Modern UI** – Beautiful gradient designs with smooth animations  
+- ⚡ **Fast & Responsive** – Vite HMR for instant development feedback  
+- 🔄 **RESTful API** – Clean Python FastAPI backend with MongoDB integration  
 
 ---
 
@@ -20,41 +21,64 @@
 
 ```
 Pet-AI-Assistant/
-├── frontend/                 ← React + Vite application
+├── frontend/
 │   ├── src/
 │   │   ├── api/
-│   │   │   └── petApi.js     ← API service layer (axios)
-│   │   ├── components/
-│   │   │   ├── AllergyPills.jsx    ← Reusable allergy component
-│   │   │   └── FoodCard.jsx        ← Product card component
+│   │   │   └── petApi.js             # Axios API configuration for backend calls
+│   │   │
+│   │   ├── components/               # Reusable UI components
+│   │   │   ├── AllergyPills.jsx      # Allergy tag input and removal component
+│   │   │   ├── ComparisonTool.jsx    # (New) Compare food items visually or by data
+│   │   │   └── FoodCard.jsx          # Displays product details, nutrition info, and icons
+│   │   │
 │   │   ├── pages/
-│   │   │   ├── PetForm.jsx         ← Form page
-│   │   │   └── Recommendations.jsx ← Recommendations page
+│   │   │   ├── PetForm.jsx           # Pet profile creation form
+│   │   │   └── Recommendations.jsx   # Displays filtered and sorted food recommendations
+│   │   │
 │   │   ├── styles/
-│   │   │   ├── form.css            ← Form styles
-│   │   │   └── recommendation.css  ← Recommendation styles
-│   │   ├── App.jsx           ← Main app with React Router
-│   │   ├── App.css           ← Global app styles
-│   │   └── main.jsx          ← Entry point
-│   ├── package.json
-│   └── vite.config.js
+│   │   │   ├── form.css              # Styling for PetForm (inputs, layout, themes)
+│   │   │   └── recommendation.css    # Styling for Recommendations page (cards, grids)
+│   │   │
+│   │   ├── utils/
+│   │   │   └── foodUtils.js          # Helper functions for filtering and matching products
+│   │   │
+│   │   ├── App.jsx                   # Root component (sets up routes and page structure)
+│   │   ├── App.css                   # Global UI styling (buttons, layout)
+│   │   ├── index.css                 # General global styling (fonts, resets)
+│   │   ├── main.jsx                  # React entry point (mounts App)
+│   │   │
+│   │   └── (React standard files)
+│   │
+│   ├── index.html                    # Root HTML template used by Vite
+│   ├── package.json                  # Frontend dependencies and scripts
+│   ├── package-lock.json             # Exact dependency lock file
+│   ├── vite.config.js                # Vite build and dev configuration
+│   ├── eslint.config.js              # ESLint config for React linting
+│   └── .gitignore                    # Node/Vite ignores (node_modules, dist, etc.)
 │
-├── backend/                  ← Python FastAPI backend
-│   ├── scrapers/
-│   │   ├── orijen_scraper.py      ← Orijen brand scraper
-│   │   ├── petvalu_scraper.py     ← PetValu retailer scraper
-│   │   └── scraper_pipeline.py    ← Scraping pipeline
+├── backend/
+│   │
+│   ├── scrapers/                 # Web scraping scripts
+│   │   ├── __init__.py           # Makes 'scrapers' a Python package
+│   │   ├── orijen_scraper.py     # Scraper for Orijen dog food brand
+│   │   ├── petvalu_scraper.py    # Scraper for PetValu store products
+│   │   └── scraper_pipeline.py   # Orchestrates and manages multiple scrapers
+│   │
 │   ├── utils/
-│   │   └── data_normalizer.py     ← Data normalization utilities
-│   ├── data/                      ← Scraped product data (gitignored)
-│   ├── main.py                    ← FastAPI app with endpoints
-│   ├── import_products.py         ← Product import script
-│   ├── test_scraper.py            ← Scraper testing utilities
-│   ├── requirements.txt           ← Python dependencies
-│   ├── .env.example               ← Environment variables template
-│   └── .gitignore                 ← Backend-specific gitignore
+│   │   ├── __init__.py
+│   │   └── data_normalizer.py    # Cleans and formats scraped data (standardizes names, numbers)
+│   │
+│   ├── data/                     # Holds scraped product data (gitignored)
+│   │
+│   ├── main.py                   # FastAPI main server entry point, defines routes
+│   ├── import_products.py        # Imports scraped data into MongoDB
+│   ├── test_scraper.py           # Testing file for verifying scraper output
+│   │
+│   ├── requirements.txt          # Python dependencies (FastAPI, Motor, BeautifulSoup, etc.)
+│   ├── .env.example              # Example environment file with MongoDB connection template
+│   └── .gitignore                # Backend-specific ignores (venv, data files, etc.)
 │
-├── archive/                  ← Old frontend (vanilla JS) & Java backend (gitignored)
+│
 └── README.md                 ← This file
 ```
 
@@ -148,49 +172,6 @@ npm run dev
 ### Products
 - `GET /api/products` - List all products (admin)
 - `GET /api/products/{product_id}` - Get product by ID
-
----
-
-## 🧠 Roadmap
-
-### Phase 1: Frontend Modernization ✅ **COMPLETE**
-- [x] Set up React + Vite project
-- [x] Create reusable components (AllergyPills, FoodCard)
-- [x] Migrate form and recommendations pages
-- [x] Set up React Router and API layer
-- [x] Maintain beautiful CSS styling
-
-### Phase 2: Web Scraping ⚡ **IN PROGRESS**
-- [x] Build Orijen brand scraper with BeautifulSoup4
-- [x] Extract product data (ingredients, nutrition analysis, images, URLs)
-- [x] Implement data normalization and validation
-- [x] Fix scraper bugs (image extraction, calorie calculation, life stage detection)
-- [x] Successfully scraped 11 Orijen products
-- [ ] Add prices and bag sizes manually for Orijen products
-- [ ] Build scrapers for other brands (Royal Canin, Hill's, Purina)
-- [ ] Automate weekly scraping
-- [ ] Expand database from 11 to 100+ products
-
-### Phase 3: UX & Testing
-- [ ] End-to-end testing with multiple pet profiles
-- [ ] Validate recommendation algorithm
-- [ ] Performance optimization (caching, lazy loading)
-- [ ] Error handling and edge cases
-- [ ] User testing with real pet owners
-
-### Phase 4: AI Integration
-- [ ] Chatbot for nutrition advice (LLM integration)
-- [ ] Natural language product search
-- [ ] Breed identification from photos (computer vision)
-- [ ] Personalized feeding schedules
-- [ ] Health predictions based on diet
-
-### Phase 5: Production Deployment
-- [ ] Cloud hosting (AWS/DigitalOcean)
-- [ ] MongoDB Atlas (cloud database)
-- [ ] User authentication
-- [ ] SEO optimization
-- [ ] Domain and SSL
 
 ---
 
