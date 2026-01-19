@@ -206,16 +206,31 @@ class ProductResponse(BaseModel):
 
 
 # ============================================
-# Helper Functions
+# Helper Functions (MongoDB → API conversion)
 # ============================================
 
+# These functions convert MongoDB documents to API response format.
+# Why needed:
+#   1. MongoDB uses "_id" (ObjectId type) → API needs "id" (string)
+#   2. MongoDB fields might be missing → API needs default values
+#   3. Centralizes conversion logic in one place
+
+
 def pet_helper(pet) -> dict:
-    """Convert MongoDB document to dictionary"""
+    """
+    Convert a MongoDB pet document to API response format.
+
+    MongoDB document:  {"_id": ObjectId("..."), "name": "Buddy", ...}
+    API response:      {"id": "...", "name": "Buddy", ...}
+
+    Uses .get() with defaults to handle missing fields gracefully.
+    """
+    # Handle legacy field name: old data might use "breed" instead of "breedSize"
     breed_size = pet.get("breedSize", pet.get("breed", ""))
 
     pet_data = {
-        "id": str(pet["_id"]),
-        "name": pet.get("name", ""),
+        "id": str(pet["_id"]),                  # Convert ObjectId to string for JSON
+        "name": pet.get("name", ""),            # .get() returns "" if field missing
         "breedSize": breed_size,
         "ageGroup": pet.get("ageGroup", ""),
         "activityLevel": pet.get("activityLevel", ""),
@@ -223,20 +238,87 @@ def pet_helper(pet) -> dict:
         "allergies": pet.get("allergies", [])
     }
 
-    # Include legacy field for backward compatibility
+    # Include legacy "breed" field for backward compatibility with old frontend code
     if pet.get("breed") or breed_size:
         pet_data["breed"] = pet.get("breed", breed_size)
 
     return pet_data
 
 
+def product_helper(product) -> dict:
+    """
+    Convert a MongoDB product document to API response format.
+
+    Handles all product fields including nutritional data.
+    - String fields: default to "" (empty string)
+    - Number fields: default to None (will be null in JSON)
+    - Boolean fields: default to False
+    """
+    return {
+        # === Basic Info ===
+        "id": str(product.get("_id", "")),
+        "brand": product.get("brand", ""),
+        "line": product.get("line", ""),
+        "format": product.get("format", ""),
+        "life_stage": product.get("life_stage", ""),
+        "breed_size": product.get("breed_size", ""),
+        "primary_proteins": product.get("primary_proteins", ""),
+        "grain_free": product.get("grain_free", False),
+        "ingredients": product.get("ingredients", ""),
+        "allergen_tags": product.get("allergen_tags", ""),
+
+        # === Nutritional Info (None if not available) ===
+        "protein_pct": product.get("protein_pct"),
+        "fat_pct": product.get("fat_pct"),
+        "ash_pct": product.get("ash_pct"),
+        "fiber_pct": product.get("fiber_pct"),
+        "moisture_pct": product.get("moisture_pct"),
+        "calcium_pct": product.get("calcium_pct"),
+        "phosphorus_pct": product.get("phosphorus_pct"),
+        "omega_6_fatty_acids": product.get("omega_6_fatty_acids"),
+        "omega_3_fatty_acids": product.get("omega_3_fatty_acids"),
+        "DHA": product.get("DHA"),
+        "EPA": product.get("EPA"),
+
+        # === Calorie Info ===
+        "kcal_per_cup": product.get("kcal_per_cup"),
+        "kcal_per_kg": product.get("kcal_per_kg"),
+
+        # === Product Details ===
+        "kibble_size": product.get("kibble_size", ""),
+        "tags": product.get("tags", ""),
+        "size_kg": product.get("size_kg"),
+        "price": product.get("price"),
+        "price_per_kg": product.get("price_per_kg"),
+        "retailer": product.get("retailer", ""),
+        "image": product.get("image", ""),
+        "source_url": product.get("source_url", ""),
+        "updated_at": product.get("updated_at", "")
+    }
+
+
 # ============================================
-# API Endpoints
+# Pet API Endpoints (CRUD Operations)
 # ============================================
+
+# CRUD = Create, Read, Update, Delete
+# These endpoints handle all pet profile operations.
+#
+# Endpoint Pattern:
+#   @app.METHOD("/path", response_model=Schema, status_code=CODE)
+#   - METHOD: get, post, put, delete
+#   - response_model: Pydantic model to validate response
+#   - status_code: HTTP status code to return (default 200)
+
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """
+    Health check endpoint.
+
+    Used to verify the API is running.
+    Visit http://localhost:8000/ to see this response.
+    """
     return {
         "status": "running",
         "message": "Pet AI Assistant API is up and running!",
@@ -247,20 +329,26 @@ async def root():
 @app.post("/api/pets", response_model=PetResponse, status_code=201)
 async def create_pet(pet: PetCreate):
     """
-    Create a new pet profile
+    Create a new pet profile.
 
-    Equivalent to Spring Boot's:
-    @PostMapping("/api/pets")
-    public Pet savePet(@RequestBody Pet pet)
+    - Request body: PetCreate schema (validated automatically by FastAPI)
+    - Returns: The created pet with its MongoDB-generated ID
+    - Status: 201 Created on success
+
+    Flow:
+    1. Pydantic validates the incoming JSON → PetCreate
+    2. Convert to dict and insert into MongoDB
+    3. Fetch the created document (now has _id)
+    4. Convert to response format and return
     """
     try:
         # Convert Pydantic model to dict for MongoDB
         pet_dict = pet.model_dump()
 
-        # Insert into MongoDB
+        # Insert into MongoDB (returns InsertOneResult with inserted_id)
         result = await pets_collection.insert_one(pet_dict)
 
-        # Retrieve the created pet with its ID
+        # Fetch the created document to get the full object with _id
         created_pet = await pets_collection.find_one({"_id": result.inserted_id})
 
         if created_pet:
@@ -275,14 +363,16 @@ async def create_pet(pet: PetCreate):
 @app.get("/api/pets", response_model=List[PetResponse])
 async def get_all_pets():
     """
-    Retrieve all pet profiles
+    Retrieve all pet profiles.
 
-    Equivalent to Spring Boot's:
-    @GetMapping("/api/pets")
-    public List<Pet> getAllPets()
+    - Returns: List of all pets in the database
+    - Status: 200 OK
+
+    Note: Uses 'async for' because Motor returns an async cursor.
     """
     try:
         pets = []
+        # Async iteration over MongoDB cursor
         async for pet in pets_collection.find():
             pets.append(pet_helper(pet))
         return pets
@@ -294,13 +384,20 @@ async def get_all_pets():
 @app.get("/api/pets/{pet_id}", response_model=PetResponse)
 async def get_pet_by_id(pet_id: str):
     """
-    Retrieve a specific pet by ID (bonus endpoint not in Java version)
+    Retrieve a specific pet by ID.
+
+    - Path parameter: pet_id (the MongoDB ObjectId as string)
+    - Returns: The pet if found
+    - Status: 200 OK, 404 if not found, 400 if invalid ID format
+
+    Example: GET /api/pets/507f1f77bcf86cd799439011
     """
     try:
-        # Validate ObjectId format
+        # Validate that pet_id is a valid ObjectId format (24 hex characters)
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
+        # Query MongoDB (convert string to ObjectId for query)
         pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
 
         if pet:
@@ -309,7 +406,7 @@ async def get_pet_by_id(pet_id: str):
             raise HTTPException(status_code=404, detail="Pet not found")
 
     except HTTPException:
-        raise
+        raise  # Re-raise HTTP exceptions as-is (don't convert to 500)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving pet: {str(e)}")
 
@@ -317,24 +414,34 @@ async def get_pet_by_id(pet_id: str):
 @app.put("/api/pets/{pet_id}", response_model=PetResponse)
 async def update_pet(pet_id: str, pet: PetCreate):
     """
-    Update an existing pet profile (bonus endpoint not in Java version)
+    Update an existing pet profile (full replacement).
+
+    - Path parameter: pet_id
+    - Request body: PetCreate schema with new data
+    - Returns: The updated pet
+    - Status: 200 OK, 404 if not found
+
+    Note: PUT replaces all fields. For partial updates, use PATCH (not implemented).
     """
     try:
-        # Validate ObjectId format
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
-        # Update the pet
+        # Convert new data to dict
         pet_dict = pet.model_dump()
+
+        # Update in MongoDB using $set operator
+        # $set replaces only the specified fields (not the entire document)
         result = await pets_collection.update_one(
-            {"_id": ObjectId(pet_id)},
-            {"$set": pet_dict}
+            {"_id": ObjectId(pet_id)},  # Filter: which document to update
+            {"$set": pet_dict}           # Update: replace these fields
         )
 
+        # Check if a document was found and updated
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Pet not found")
 
-        # Retrieve the updated pet
+        # Fetch and return the updated document
         updated_pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
 
         if updated_pet:
@@ -351,15 +458,22 @@ async def update_pet(pet_id: str, pet: PetCreate):
 @app.delete("/api/pets/{pet_id}")
 async def delete_pet(pet_id: str):
     """
-    Delete a pet profile (bonus endpoint not in Java version)
+    Delete a pet profile.
+
+    - Path parameter: pet_id
+    - Returns: Success message with deleted pet ID
+    - Status: 200 OK, 404 if not found
+
+    Note: No response_model because we return a custom message, not PetResponse.
     """
     try:
-        # Validate ObjectId format
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
+        # Delete from MongoDB
         result = await pets_collection.delete_one({"_id": ObjectId(pet_id)})
 
+        # Check if a document was actually deleted
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Pet not found")
 
@@ -375,42 +489,8 @@ async def delete_pet(pet_id: str):
 # Product API Endpoints
 # ============================================
 
-def product_helper(product) -> dict:
-    """Convert MongoDB product document to dictionary"""
-    return {
-        "id": str(product.get("_id", "")),
-        "brand": product.get("brand", ""),
-        "line": product.get("line", ""),
-        "format": product.get("format", ""),
-        "life_stage": product.get("life_stage", ""),
-        "breed_size": product.get("breed_size", ""),
-        "primary_proteins": product.get("primary_proteins", ""),
-        "grain_free": product.get("grain_free", False),
-        "ingredients": product.get("ingredients", ""),
-        "allergen_tags": product.get("allergen_tags", ""),
-        "protein_pct": product.get("protein_pct"),
-        "fat_pct": product.get("fat_pct"),
-        "ash_pct": product.get("ash_pct"),
-        "fiber_pct": product.get("fiber_pct"),
-        "moisture_pct": product.get("moisture_pct"),
-        "calcium_pct": product.get("calcium_pct"),
-        "phosphorus_pct": product.get("phosphorus_pct"),
-        "omega_6_fatty_acids": product.get("omega_6_fatty_acids"),
-        "omega_3_fatty_acids": product.get("omega_3_fatty_acids"),
-        "DHA": product.get("DHA"),
-        "EPA": product.get("EPA"),
-        "kcal_per_cup": product.get("kcal_per_cup"),
-        "kcal_per_kg": product.get("kcal_per_kg"),
-        "kibble_size": product.get("kibble_size", ""),
-        "tags": product.get("tags", ""),
-        "size_kg": product.get("size_kg"),
-        "price": product.get("price"),
-        "price_per_kg": product.get("price_per_kg"),
-        "retailer": product.get("retailer", ""),
-        "image": product.get("image", ""),
-        "source_url": product.get("source_url", ""),
-        "updated_at": product.get("updated_at", "")
-    }
+# Products are read-only in this API (no create/update/delete).
+# Products are imported via scrapers and import scripts, not the API.
 
 
 @app.get("/api/products", response_model=List[ProductResponse])
@@ -422,28 +502,39 @@ async def get_all_products(
     limit: Optional[int] = 100
 ):
     """
-    Get all products with optional filtering
+    Get all products with optional filtering.
 
-    Query Parameters:
-    - life_stage: Filter by life stage (puppy, adult, senior)
-    - breed_size: Filter by breed size (small, medium, large)
-    - grain_free: Filter by grain-free status (true/false)
-    - brand: Filter by brand name
-    - limit: Maximum number of products to return (default: 100)
+    Query Parameters (all optional):
+    - life_stage: "puppy", "adult", "senior", or "all"
+    - breed_size: "small", "medium", "large", or "all"
+    - grain_free: true or false
+    - brand: Brand name (case-insensitive partial match)
+    - limit: Max products to return (default 100)
+
+    Example: GET /api/products?life_stage=adult&grain_free=true&limit=10
+
+    The query is built dynamically based on which parameters are provided.
     """
     try:
-        # Build filter query
+        # Build MongoDB query dynamically
         query = {}
+
         if life_stage:
             query["life_stage"] = life_stage.lower()
+
         if breed_size:
             query["breed_size"] = breed_size.lower()
+
+        # Note: Must check 'is not None' for booleans (False is a valid filter!)
         if grain_free is not None:
             query["grain_free"] = grain_free
-        if brand:
-            query["brand"] = {"$regex": brand, "$options": "i"}  # Case-insensitive search
 
-        # Fetch products
+        if brand:
+            # $regex with $options:"i" = case-insensitive partial match
+            # "orijen" matches "Orijen", "ORIJEN", etc.
+            query["brand"] = {"$regex": brand, "$options": "i"}
+
+        # Execute query with limit
         products = []
         async for product in products_collection.find(query).limit(limit):
             products.append(product_helper(product))
@@ -457,9 +548,17 @@ async def get_all_products(
 @app.get("/api/products/{product_id}", response_model=ProductResponse)
 async def get_product_by_id(product_id: str):
     """
-    Get a specific product by ID
+    Get a specific product by ID.
+
+    - Path parameter: product_id (the product's unique string ID, NOT ObjectId)
+    - Returns: The product if found
+    - Status: 200 OK, 404 if not found
+
+    Note: Product IDs are strings like "Orijen-Large-Breed-Adult", not ObjectIds.
+    This is because products are imported with custom IDs, not auto-generated.
     """
     try:
+        # Products use string IDs (not ObjectId), so query directly
         product = await products_collection.find_one({"_id": product_id})
 
         if product:
