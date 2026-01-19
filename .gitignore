@@ -19,7 +19,6 @@ build/
 # IDE
 .idea/
 .vscode/
-.claude/
 *.iml
 *.swp
 *.swo
