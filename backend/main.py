@@ -1,20 +1,36 @@
 """
 Pet AI Assistant - FastAPI Backend
 Main application entry point
+
+This file contains:
+- FastAPI app setup and CORS configuration
+- MongoDB database connection
+- Pydantic models for request/response validation
+- CRUD endpoints for pets and products
+- Recommendation engine with scoring algorithm
+
+Run with: uvicorn main:app --reload --port 8000
+API docs: http://localhost:8000/docs
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from bson import ObjectId
-import os
+# ============================================
+# Imports
+# ============================================
+
+from fastapi import FastAPI, HTTPException          # Web framework and HTTP error handling
+from fastapi.middleware.cors import CORSMiddleware  # Allow cross-origin requests (frontend → backend)
+from motor.motor_asyncio import AsyncIOMotorClient  # Async MongoDB driver (non-blocking DB calls)
+from pydantic import BaseModel, Field               # Data validation and schema definition
+from typing import List, Optional                   # Type hints for better code clarity
+from bson import ObjectId                           # MongoDB's unique ID type
+import os                                           # Access environment variables
 
 # ============================================
 # FastAPI Application Setup
 # ============================================
 
+# Create the FastAPI app instance
+# - title/description/version appear in auto-generated docs at /docs
 app = FastAPI(
     title="Pet AI Assistant API",
     description="Backend API for pet food recommendations",
@@ -22,58 +38,72 @@ app = FastAPI(
 )
 
 # ============================================
-# CORS Configuration
+# CORS Configuration (Cross-Origin Resource Sharing)
 # ============================================
 
+# CORS allows the frontend (localhost:5173) to call the backend (localhost:8000)
+# Without this, browsers block cross-origin requests for security
+
+# WARNING: Allowing all origins ("*") is insecure for production! Remember to restrict this.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Same as your Spring Boot @CrossOrigin(origins = "*")
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],        # Who can call this API ("*" = anyone, use specific domains in production)
+    allow_credentials=True,     # Allow cookies and authorization headers
+    allow_methods=["*"],        # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],        # Allow all headers
 )
 
 # ============================================
 # MongoDB Connection
 # ============================================
 
+# Get MongoDB URL from environment variable, or use localhost as default
+# This allows different URLs for development vs production
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DATABASE_NAME = "petai"
 
+# Create async MongoDB client (Motor = async wrapper around PyMongo)
 client = AsyncIOMotorClient(MONGODB_URL)
+
+# Get references to database and collections
+# This is like running "use petai" then "db.pets" in mongosh
 database = client[DATABASE_NAME]
-pets_collection = database["pets"]
-products_collection = database["products"]
+pets_collection = database["pets"]          # Stores pet profiles
+products_collection = database["products"]  # Stores dog food products
 
 # ============================================
 # Pydantic Models (Request/Response Schemas)
 # ============================================
 
-class PetCreate(BaseModel):
-    """Request model for creating a pet (matches your frontend data)"""
-    name: str
-    breedSize: str  # Frontend sends breedSize, not breed
-    ageGroup: str
-    activityLevel: str
-    weightGoal: str
-    allergies: Optional[List[str]] = []
+# Pydantic models define the SHAPE of data and validate it automatically
+# - If data doesn't match the schema, FastAPI returns a 422 error
+# - Two models per resource: one for INPUT (Create), one for OUTPUT (Response)
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "name": "Buddy",
-                "breedSize": "medium",
-                "ageGroup": "adult",
-                "activityLevel": "high",
-                "weightGoal": "muscle-gain",
-                "allergies": ["chicken", "wheat"]
-            }
-        }
+
+class PetCreate(BaseModel):
+    """
+    Schema for creating a new pet profile.
+    Used when: POST /api/pets
+
+    All fields except allergies are required.
+    This model validates data BEFORE it reaches your endpoint code.
+    """
+    name: str                               # Pet's name (required)
+    breedSize: str                          # "small", "medium", or "large" (required)
+    ageGroup: str                           # "puppy", "adult", or "senior" (required)
+    activityLevel: str                      # "low", "medium", or "high" (required)
+    weightGoal: str                         # "maintenance", "weight-loss", or "muscle-gain" (required)
+    allergies: Optional[List[str]] = []     # List of allergens, defaults to empty list
 
 
 class PetResponse(BaseModel):
-    """Response model with MongoDB ID"""
-    id: str
+    """
+    Schema for returning pet data to the frontend.
+    Used when: GET /api/pets, POST /api/pets response
+
+    Includes 'id' field which is generated by MongoDB.
+    """
+    id: str                                 # MongoDB ObjectId converted to string
     name: str
     breedSize: str
     ageGroup: str
@@ -85,86 +115,62 @@ class PetResponse(BaseModel):
         description="Deprecated legacy field - prefer breedSize"
     )
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "507f1f77bcf86cd799439011",
-                "name": "Buddy",
-                "breedSize": "medium",
-                "breed": "medium",
-                "ageGroup": "adult",
-                "activityLevel": "high",
-                "weightGoal": "muscle-gain",
-                "allergies": ["chicken", "wheat"]
-            }
-        }
-
 
 class ProductCreate(BaseModel):
-    """Request model for creating a product"""
-    id: str  # Unique product ID (e.g., "Orijen-Large-Breed-Adult")
-    brand: str
-    line: str
-    format: str  # dry, wet, raw, etc.
-    life_stage: str  # puppy, adult, senior, all
-    breed_size: str  # small, medium, large, all
-    primary_proteins: str  # Comma-separated protein sources
-    grain_free: bool
-    ingredients: str  # Full ingredient list
-    allergen_tags: str  # Comma-separated allergens
+    """
+    Schema for creating/importing a dog food product.
+    Used when: Importing products from scrapers or CSV
 
-    # Nutritional information (percentages)
-    protein_pct: Optional[float] = None
-    fat_pct: Optional[float] = None
-    ash_pct: Optional[float] = None
-    fiber_pct: Optional[float] = None
-    moisture_pct: Optional[float] = None
-    calcium_pct: Optional[float] = None
-    phosphorus_pct: Optional[float] = None
-    omega_6_fatty_acids: Optional[float] = None
-    omega_3_fatty_acids: Optional[float] = None
-    DHA: Optional[float] = None
-    EPA: Optional[float] = None
+    Contains all nutritional information, pricing, and metadata.
+    Optional fields use None as default for products with missing data.
+    """
+    # === Required Fields ===
+    id: str                             # Unique product ID (e.g., "Orijen-Large-Breed-Adult")
+    brand: str                          # Brand name (e.g., "Orijen", "Royal Canin")
+    line: str                           # Product line name (e.g., "Large Breed Adult Recipe")
+    format: str                         # "dry", "wet", or "raw"
+    life_stage: str                     # "puppy", "adult", "senior", or "all"
+    breed_size: str                     # "small", "medium", "large", or "all"
+    primary_proteins: str               # Comma-separated (e.g., "Chicken, Turkey, Salmon")
+    grain_free: bool                    # True if no grains in ingredients
+    ingredients: str                    # Full ingredient list as text
+    allergen_tags: str                  # Comma-separated allergens (e.g., "chicken, fish, eggs")
+    tags: str                           # Comma-separated tags for filtering
 
-    # Calories
-    kcal_per_cup: Optional[int] = None
-    kcal_per_kg: Optional[int] = None
+    # === Nutritional Information (Guaranteed Analysis) ===
+    # All percentages, all optional since not all products have complete data
+    protein_pct: Optional[float] = None             # Crude protein %
+    fat_pct: Optional[float] = None                 # Crude fat %
+    ash_pct: Optional[float] = None                 # Ash content %
+    fiber_pct: Optional[float] = None               # Crude fiber %
+    moisture_pct: Optional[float] = None            # Moisture %
+    calcium_pct: Optional[float] = None             # Calcium %
+    phosphorus_pct: Optional[float] = None          # Phosphorus %
+    omega_6_fatty_acids: Optional[float] = None     # Omega-6 %
+    omega_3_fatty_acids: Optional[float] = None     # Omega-3 %
+    DHA: Optional[float] = None                     # DHA % (brain health)
+    EPA: Optional[float] = None                     # EPA % (joint health)
 
-    # Additional info
-    kibble_size: Optional[str] = None
-    tags: str  # Comma-separated tags
-    size_kg: Optional[float] = None
-    price: Optional[float] = None
-    price_per_kg: Optional[float] = None
-    retailer: Optional[str] = None
-    image: Optional[str] = None
-    source_url: Optional[str] = None
-    updated_at: Optional[str] = None
+    # === Calorie Information ===
+    kcal_per_cup: Optional[int] = None              # Calories per cup
+    kcal_per_kg: Optional[int] = None               # Calories per kg
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "Orijen-Large-Breed-Adult",
-                "brand": "Orijen",
-                "line": "Large Breed Adult Recipe",
-                "format": "dry",
-                "life_stage": "adult",
-                "breed_size": "Large",
-                "primary_proteins": "Chicken, Turkey, Salmon, Herring",
-                "grain_free": True,
-                "ingredients": "fresh chicken, fresh turkey...",
-                "allergen_tags": "chicken, turkey, fish, eggs",
-                "protein_pct": 38.0,
-                "fat_pct": 15.0,
-                "tags": "high-protein, adult, large, dry",
-                "price": 122.99,
-                "image": "https://example.com/image.png"
-            }
-        }
+    # === Product Details ===
+    kibble_size: Optional[str] = None               # "small", "regular", or "large"
+    size_kg: Optional[float] = None                 # Package size in kg
+    price: Optional[float] = None                   # Price in dollars
+    price_per_kg: Optional[float] = None            # Calculated price per kg
+    retailer: Optional[str] = None                  # Where to buy (e.g., "PetValu")
+    image: Optional[str] = None                     # Product image URL
+    source_url: Optional[str] = None                # Where data was scraped from
+    updated_at: Optional[str] = None                # Last update timestamp
 
 
 class ProductResponse(BaseModel):
-    """Response model for products"""
+    """
+    Schema for returning product data to the frontend.
+    Mirrors ProductCreate but used for API responses.
+    """
     id: str
     brand: str
     line: str
