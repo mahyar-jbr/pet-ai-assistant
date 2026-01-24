@@ -576,22 +576,66 @@ async def get_product_by_id(product_id: str):
 # Recommendation Engine
 # ============================================
 
+# This is the "brain" of the Pet AI Assistant - it matches products to pets.
+#
+# How it works:
+#   1. Take a pet profile (size, activity, goals, allergies)
+#   2. Score every product in the database (0-100 points)
+#   3. Filter out products with score < 50
+#   4. Return top 15 matches with explanations
+#
+# Scoring breakdown (100 points max):
+#   - Breed/Kibble Size Match:  0-20 points
+#   - Activity + Weight Goal:   0-40 points (the most important factor)
+#   - Nutritional Quality:      0-25 points
+#   - Ingredient Quality:       0-10 points
+#   - Price Value:              0-5  points (placeholder)
+#
+# Hard Filters (instant disqualification):
+#   - Product contains pet's allergens → score = 0
+#   - Kibble size incompatible with dog size → score = 0
+
+
 class RecommendationResponse(BaseModel):
-    """Response model for recommendations with score"""
+    """
+    Response model for a single product recommendation.
+
+    Fields:
+    - product: Full product details (ProductResponse)
+    - score: Compatibility score from 0-100
+    - match_percentage: Same as score, as integer for display
+    - reasons: List of human-readable explanations (e.g., "High protein for muscle building")
+    """
     product: ProductResponse
     score: float
     match_percentage: int
     reasons: List[str]
 
 
+# ----------------------------------------------
+# Scoring Function 1: Breed Size (0-20 points)
+# ----------------------------------------------
+
 def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str) -> tuple[float, str]:
     """
-    Calculate breed size compatibility score
+    Calculate breed size compatibility score.
 
-    Rules:
-    - Small breed: small (+20) or regular (+15) kibble
-    - Medium breed: regular (+20) kibble only
-    - Large breed: large (+20) or regular (+15) kibble
+    Matching kibble size to dog size ensures:
+    - Small dogs can chew comfortably
+    - Large dogs don't choke on tiny pieces
+    - Medium dogs get appropriately sized kibble
+
+    Scoring Table:
+    ┌─────────────┬───────────────┬────────────────┬───────────────┐
+    │ Dog Size    │ Small Kibble  │ Regular Kibble │ Large Kibble  │
+    ├─────────────┼───────────────┼────────────────┼───────────────┤
+    │ Small       │ 20 pts (best) │ 15 pts (ok)    │ 0 pts         │
+    │ Medium      │ 0 pts         │ 20 pts (best)  │ 0 pts         │
+    │ Large       │ 0 pts         │ 15 pts (ok)    │ 20 pts (best) │
+    └─────────────┴───────────────┴────────────────┴───────────────┘
+
+    Returns:
+        tuple[float, str]: (score, reason_text)
     """
     pet_size = pet_breed_size.lower()
     kibble = product_kibble_size.lower()
@@ -618,8 +662,12 @@ def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str) ->
         else:
             return 0.0, ""
 
-    return 10.0, ""  # Fallback
+    return 10.0, ""  # Fallback for unknown sizes
 
+
+# ----------------------------------------------
+# Scoring Function 2: Activity + Goal (0-40 points)
+# ----------------------------------------------
 
 def calculate_activity_goal_score(
     activity_level: str,
@@ -629,8 +677,21 @@ def calculate_activity_goal_score(
     fiber_pct: float
 ) -> tuple[float, List[str]]:
     """
-    Calculate score based on activity level and dietary goals
-    Max: 40 points
+    Calculate score based on activity level and dietary goals.
+
+    This is the MOST IMPORTANT scoring function (40 points max).
+    It matches nutritional content to the dog's lifestyle and goals.
+
+    Activity Levels: high, medium, low
+    Weight Goals: muscle-gain, maintenance, weight-loss
+
+    General Rules:
+    - High activity + muscle-gain → Need HIGH protein (38%+) and HIGH fat (15%+)
+    - High activity + maintenance → Need HIGH protein (35%+), MODERATE fat (12-18%)
+    - Low activity + weight-loss → Need ADEQUATE protein, LOW fat (<12%), HIGH fiber (5%+)
+
+    Returns:
+        tuple[float, List[str]]: (score capped at 40, list of reasons)
     """
     score = 0.0
     reasons = []
@@ -741,8 +802,13 @@ def calculate_activity_goal_score(
             if fat_pct >= 12:
                 score += 10
 
+    # Cap at 40 points max (prevents overflow from multiple bonuses)
     return min(score, 40.0), reasons
 
+
+# ----------------------------------------------
+# Scoring Function 3: Nutritional Quality (0-25 points)
+# ----------------------------------------------
 
 def calculate_nutritional_quality_score(
     protein_pct: float,
@@ -753,8 +819,19 @@ def calculate_nutritional_quality_score(
     grain_free: bool
 ) -> tuple[float, List[str]]:
     """
-    Calculate nutritional quality score
-    Max: 25 points
+    Calculate nutritional quality score based on premium ingredients.
+
+    This rewards high-quality nutrition regardless of the dog's specific needs.
+
+    Point Breakdown:
+    - Protein quality:  0-10 pts (38%+ = 10, 35%+ = 8, 30%+ = 5)
+    - Omega-3 content:  0-3 pts  (0.8%+ = 3, 0.5%+ = 2)
+    - DHA content:      0-2 pts  (0.3%+ = 2, 0.2%+ = 1)
+    - Grain-free:       0-5 pts  (yes = 5)
+    - Fat balance:      0-5 pts  (12-18% = 5, 10-20% = 3)
+
+    Returns:
+        tuple[float, List[str]]: (score capped at 25, list of reasons)
     """
     score = 0.0
     reasons = []
@@ -794,13 +871,29 @@ def calculate_nutritional_quality_score(
     elif 10 <= fat_pct <= 20:
         score += 3
 
+    # Cap at 25 points max
     return min(score, 25.0), reasons
 
 
+# ----------------------------------------------
+# Scoring Function 4: Ingredient Quality (0-10 points)
+# ----------------------------------------------
+
 def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str) -> tuple[float, List[str]]:
     """
-    Calculate ingredient quality score
-    Max: 10 points
+    Calculate ingredient quality score based on ingredient list analysis.
+
+    Checks for premium ingredient indicators:
+    - Fresh meat first:      0-5 pts (looks for "fresh", "raw", "whole" in first 3 ingredients)
+    - Multiple proteins:     0-3 pts (3+ sources = 3, 2 sources = 2)
+    - No controversial:      0-2 pts (no "by-product", "meal", "digest", "artificial")
+
+    Args:
+        ingredients: Comma-separated ingredient list string
+        primary_proteins: Comma-separated protein sources string
+
+    Returns:
+        tuple[float, List[str]]: (score capped at 10, list of reasons)
     """
     score = 0.0
     reasons = []
@@ -828,46 +921,73 @@ def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str) 
         score += 2
         reasons.append("No controversial ingredients")
 
+    # Cap at 10 points max
     return min(score, 10.0), reasons
 
 
+# ----------------------------------------------
+# Main Scoring Function: Orchestrates All Scores
+# ----------------------------------------------
+
 def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List[str]]:
     """
-    Calculate overall compatibility score for a product given a pet profile
-    Returns: (score, reasons)
+    Calculate overall compatibility score for a product given a pet profile.
+
+    This is the main orchestrator that:
+    1. Applies HARD FILTERS (allergies, kibble size) - returns 0 if failed
+    2. Calls all 4 scoring functions
+    3. Adds up total score (max 100 points)
+    4. Returns score and list of reasons
+
+    Args:
+        product: MongoDB product document (dict)
+        pet_profile: Pet profile with keys: breedSize, activityLevel, weightGoal, allergies
+
+    Returns:
+        tuple[float, List[str]]: (total_score 0-100, list of reason strings)
     """
     total_score = 0.0
     all_reasons = []
 
-    # Extract pet info
+    # --- Extract pet info from profile ---
     pet_breed_size = pet_profile.get("breedSize", "medium")
     pet_activity = pet_profile.get("activityLevel", "medium")
     pet_goal = pet_profile.get("weightGoal", "maintenance")
+    # Convert allergies to lowercase for case-insensitive matching
     pet_allergies = [a.lower().strip() for a in pet_profile.get("allergies", [])]
 
-    # Extract product info
+    # --- Extract product info from MongoDB document ---
     product_kibble = product.get("kibble_size", "regular")
-    protein_pct = product.get("protein_pct") or 0
+    protein_pct = product.get("protein_pct") or 0      # Use 0 if None
     fat_pct = product.get("fat_pct") or 0
     fiber_pct = product.get("fiber_pct") or 0
-    omega_3 = product.get("omega_3_fatty_acids")
+    omega_3 = product.get("omega_3_fatty_acids")       # Keep as None if missing
     dha = product.get("DHA")
     epa = product.get("EPA")
     grain_free = product.get("grain_free", False)
     ingredients = product.get("ingredients", "")
     primary_proteins = product.get("primary_proteins", "")
     allergen_tags = product.get("allergen_tags", "")
+    price_per_kg = product.get("price_per_kg")
 
-    # HARD FILTER: Allergy check (return 0 if allergies present)
+    # ==========================================
+    # HARD FILTERS - Instant Disqualification
+    # ==========================================
+    # These return 0 immediately. A product with allergens is dangerous
+    # no matter how good its nutrition is.
+
+    # Hard Filter 1: Allergy check
+    # Split allergen_tags string into list: "chicken,beef" → ["chicken", "beef"]
     product_allergens = [a.lower().strip() for a in allergen_tags.split(',') if a.strip()]
+    # Check if ANY pet allergy matches ANY product allergen
     if any(allergy in product_allergens for allergy in pet_allergies):
         return 0.0, ["Contains allergens - NOT RECOMMENDED"]
 
-    # HARD FILTER: Kibble size incompatibility check
+    # Hard Filter 2: Kibble size incompatibility
     pet_size = pet_breed_size.lower()
     kibble = product_kibble.lower()
 
-    # Small dogs cannot eat large kibble
+    # Small dogs cannot eat large kibble (too hard to chew)
     if pet_size == "small" and kibble == "large":
         return 0.0, ["Kibble too large for small breed"]
 
@@ -875,53 +995,101 @@ def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List
     if pet_size == "large" and kibble == "small":
         return 0.0, ["Kibble too small for large breed"]
 
-    # Medium dogs should avoid small and large kibble
+    # Medium dogs need regular kibble
     if pet_size == "medium" and kibble in ["small", "large"]:
         return 0.0, ["Kibble size not suitable for medium breed"]
 
-    # 1. Breed Size Score (0-20 points)
+    # ==========================================
+    # SOFT SCORING - Add points for good matches
+    # ==========================================
+    # Products that pass hard filters get scored on quality/fit.
+
+    # Score 1: Breed Size Match (0-20 points)
     breed_score, breed_reason = calculate_breed_size_score(pet_breed_size, product_kibble)
     total_score += breed_score
     if breed_reason:
         all_reasons.append(breed_reason)
 
-    # 2. Activity + Goal Score (0-40 points)
+    # Score 2: Activity + Weight Goal Match (0-40 points) - Most Important!
     activity_score, activity_reasons = calculate_activity_goal_score(
         pet_activity, pet_goal, protein_pct, fat_pct, fiber_pct
     )
     total_score += activity_score
-    all_reasons.extend(activity_reasons)
+    all_reasons.extend(activity_reasons)  # extend() adds all items from list
 
-    # 3. Nutritional Quality Score (0-25 points)
+    # Score 3: Nutritional Quality (0-25 points)
     nutrition_score, nutrition_reasons = calculate_nutritional_quality_score(
         protein_pct, fat_pct, omega_3, dha, epa, grain_free
     )
     total_score += nutrition_score
     all_reasons.extend(nutrition_reasons)
 
-    # 4. Ingredient Quality Score (0-10 points)
+    # Score 4: Ingredient Quality (0-10 points)
     ingredient_score, ingredient_reasons = calculate_ingredient_quality_score(
         ingredients, primary_proteins
     )
     total_score += ingredient_score
     all_reasons.extend(ingredient_reasons)
 
-    # 5. Price Value Score (0-5 points) - TODO: Future implementation
-    # For now, give baseline points
-    total_score += 5
+    # Score 5: Price Value (0-5 points)
+    price_score = 0.0
+    if price_per_kg and price_per_kg > 0:
+        quality_points = nutrition_score + ingredient_score
+        value_ratio = quality_points / price_per_kg
+
+        if value_ratio >= 3.0:
+            price_score = 5.0
+            all_reasons.append("Excellent value for the quality")
+        elif value_ratio >= 2.2:
+            price_score = 4.0
+            all_reasons.append("Good price for high quality")
+        elif value_ratio >= 1.5:
+            price_score = 3.0
+        elif value_ratio >= 1.0:
+            price_score = 2.0
+        else:
+            price_score = 1.0
+    else:
+        price_score = 2.5  # Neutral score when pricing info is missing
+
+    total_score += price_score
 
     return total_score, all_reasons
 
 
+# ----------------------------------------------
+# Recommendation API Endpoint
+# ----------------------------------------------
+
 @app.get("/api/recommendations/{pet_id}")
 async def get_recommendations(pet_id: str):
     """
-    Get personalized dog food recommendations for a specific pet
+    Get personalized dog food recommendations for a specific pet.
 
-    Returns top 15 products scored above 50 points, sorted by compatibility
+    This is the main endpoint that powers the recommendation feature!
+
+    URL: GET /api/recommendations/507f1f77bcf86cd799439011
+
+    Flow:
+    1. Fetch pet profile from database
+    2. Query products with hard filters (dry food, matching life stage)
+    3. Score each product using score_product_for_pet()
+    4. Filter to products with score >= 50
+    5. Sort by score (highest first)
+    6. Return top 15 recommendations
+
+    Response:
+    {
+        "pet": { pet profile },
+        "total_matches": 42,
+        "recommendations": [
+            { "product": {...}, "score": 87.5, "match_percentage": 87, "reasons": [...] },
+            ...
+        ]
+    }
     """
     try:
-        # 1. Get pet profile
+        # Step 1: Validate and fetch pet profile
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
@@ -929,6 +1097,7 @@ async def get_recommendations(pet_id: str):
         if not pet:
             raise HTTPException(status_code=404, detail="Pet not found")
 
+        # Build pet profile dict for scoring functions
         pet_profile = {
             "ageGroup": pet.get("ageGroup", "adult"),
             "breedSize": pet.get("breedSize", "medium"),
@@ -937,22 +1106,26 @@ async def get_recommendations(pet_id: str):
             "allergies": pet.get("allergies", [])
         }
 
-        # 2. Get all products with hard filters
+        # Step 2: Query products with database-level hard filters
+        # These filters run in MongoDB (fast) before we score in Python
         query = {
-            "format": "dry",  # Only dry food for now
+            "format": "dry",  # Only dry food (wet food not yet supported)
         }
 
-        # Life stage filter: match exact OR "all life stages"
+        # Life stage must match pet's age OR be "all life stages"
+        # MongoDB $or operator: matches if ANY condition is true
         pet_age = pet_profile["ageGroup"].lower()
         query["$or"] = [
-            {"life_stage": pet_age},
-            {"life_stage": "all"}
+            {"life_stage": pet_age},      # e.g., "puppy", "adult", "senior"
+            {"life_stage": "all"}          # Products for all life stages
         ]
 
+        # Fetch all matching products
         all_products = []
         async for product in products_collection.find(query):
             all_products.append(product)
 
+        # Handle case where no products match basic criteria
         if not all_products:
             return {
                 "pet": pet_profile,
@@ -960,28 +1133,30 @@ async def get_recommendations(pet_id: str):
                 "message": "No products found matching basic criteria"
             }
 
-        # 3. Score each product
+        # Step 3: Score each product using our scoring algorithm
         scored_products = []
         for product in all_products:
             score, reasons = score_product_for_pet(product, pet_profile)
 
-            # Only include products scoring 50+
+            # Only include products with score >= 50 (decent match)
             if score >= 50:
                 scored_products.append({
                     "product": product_helper(product),
-                    "score": round(score, 1),
-                    "match_percentage": int(score),  # 0-100 scale
-                    "reasons": reasons[:3]  # Top 3 reasons
+                    "score": round(score, 1),           # Round to 1 decimal
+                    "match_percentage": int(score),      # Integer for display
+                    "reasons": reasons[:3]               # Show top 3 reasons only
                 })
 
-        # 4. Sort by score (highest first) and limit to top 15
+        # Step 4: Sort by score (highest first) and limit to top 15
+        # lambda x: x["score"] means "sort by the 'score' field"
+        # reverse=True means descending order (highest first)
         scored_products.sort(key=lambda x: x["score"], reverse=True)
-        top_recommendations = scored_products[:15]
+        top_recommendations = scored_products[:15]  # Slice first 15
 
         return {
             "pet": pet_profile,
-            "total_matches": len(scored_products),
-            "recommendations": top_recommendations
+            "total_matches": len(scored_products),      # How many products scored 50+
+            "recommendations": top_recommendations       # Top 15 products
         }
 
     except HTTPException:
@@ -994,23 +1169,55 @@ async def get_recommendations(pet_id: str):
 # Application Lifecycle Events
 # ============================================
 
+# FastAPI provides hooks for startup/shutdown events.
+# Use these to initialize resources (DB connections, caches) on startup
+# and clean them up (close connections) on shutdown.
+
+
 @app.on_event("startup")
 async def startup_event():
-    """Run on application startup"""
-    print("🚀 Pet AI Assistant API starting up...")
-    print(f"📊 Connected to MongoDB: {MONGODB_URL}")
-    print(f"🗄️  Database: {DATABASE_NAME}")
-    print("✅ Ready to accept requests!")
+    """
+    Runs automatically when the server starts.
+
+    Use for:
+    - Database connection verification
+    - Cache warming
+    - Logging startup info
+    """
+    print("Pet AI Assistant API starting up...")
+    print(f"Connected to MongoDB: {MONGODB_URL}")
+    print(f"Database: {DATABASE_NAME}")
+    print("Ready to accept requests!")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Run on application shutdown"""
-    print("👋 Shutting down Pet AI Assistant API...")
-    client.close()
-    print("✅ MongoDB connection closed")
+    """
+    Runs automatically when the server stops.
+
+    Use for:
+    - Closing database connections
+    - Flushing caches
+    - Cleanup tasks
+    """
+    print("Shutting down Pet AI Assistant API...")
+    client.close()  # Close MongoDB connection properly
+    print("MongoDB connection closed")
 
 
 # ============================================
-# Run with: uvicorn main:app --reload --port 8080
+# How to Run This Server
+# ============================================
+# Command: uvicorn main:app --reload --port 8080
+#
+# Breakdown:
+#   uvicorn     = ASGI server (runs async Python web apps)
+#   main        = this file (main.py)
+#   app         = the FastAPI instance (line 25)
+#   --reload    = auto-restart when code changes (dev only!)
+#   --port 8080 = listen on port 8080
+#
+# After running, visit:
+#   http://localhost:8080/docs  → Interactive API documentation
+#   http://localhost:8080/      → Health check endpoint
 # ============================================
