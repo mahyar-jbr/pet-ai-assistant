@@ -1,27 +1,60 @@
 """
-Data Normalizer for Pet Food Products
-Transforms scraped data into standardized MongoDB schema
+Pet AI Assistant - Data Normalizer
+
+This module transforms raw scraped product data into a standardized format
+for MongoDB storage. It's used by web scrapers to ensure consistent data.
+
+Data Flow:
+    Web Scraper → ProductNormalizer → ProductValidator → MongoDB
+
+Two main classes:
+    1. ProductNormalizer: Cleans and standardizes scraped data
+    2. ProductValidator: Checks data quality before saving
+
+Usage:
+    from utils.data_normalizer import ProductNormalizer, ProductValidator
+
+    raw_data = scraper.get_product()
+    normalized = ProductNormalizer.normalize(raw_data)
+    is_valid, warnings = ProductValidator.validate(normalized)
 """
 
-from typing import Dict, List, Optional
-import re
+# ============================================
+# Imports
+# ============================================
 
+from typing import Dict, List, Optional
+import re   # Regular expressions for pattern matching
+
+
+# ============================================
+# ProductNormalizer Class
+# ============================================
 
 class ProductNormalizer:
-    """Normalize scraped product data to MongoDB schema"""
+    """
+    Transforms raw scraped product data into standardized MongoDB format.
+
+    All methods are @staticmethod - no instance needed.
+    Call directly: ProductNormalizer.normalize(data)
+    """
 
     @staticmethod
     def normalize(scraped_data: Dict) -> Dict:
         """
-        Normalize scraped product data to match MongoDB schema
+        Main entry point - normalize scraped product data to MongoDB schema.
 
         Args:
-            scraped_data: Raw data from scraper
+            scraped_data: Raw dict from web scraper (inconsistent formats)
 
         Returns:
-            Normalized product document
+            Clean dict ready for MongoDB insertion
+
+        Example:
+            Input:  {"brand": "ORIJEN", "form": "Dry Kibble", ...}
+            Output: {"brand": "ORIJEN", "form": "dry", ...}
         """
-        # Start with base fields
+        # --- Base Product Info ---
         product = {
             'brand': scraped_data.get('brand', ''),
             'name': scraped_data.get('name', ''),
@@ -70,9 +103,17 @@ class ProductNormalizer:
 
         return product
 
+    # ------------------------------------------
+    # Helper Methods (private, start with _)
+    # ------------------------------------------
+
     @staticmethod
     def _normalize_form(form: str) -> str:
-        """Normalize food form to standard values"""
+        """
+        Standardize food form to: dry, wet, or raw.
+
+        Examples: "Dry Kibble" → "dry", "Wet Can" → "wet"
+        """
         form_lower = form.lower()
         if 'dry' in form_lower or 'kibble' in form_lower:
             return 'dry'
@@ -85,19 +126,17 @@ class ProductNormalizer:
     @staticmethod
     def _normalize_bag_sizes(sizes: List[str]) -> List[Dict]:
         """
-        Normalize bag sizes to structured format
+        Convert bag size strings to structured format.
 
-        Args:
-            sizes: List of size strings like "6kg", "25lb"
-
-        Returns:
-            List of size dictionaries with weight in pounds
+        Example:
+            Input: ["6kg", "25lb"]
+            Output: [{"original": "6kg", "weight_lb": 13.2, "unit": "kg"}, ...]
         """
         normalized = []
-        seen_weights = set()
+        seen_weights = set()  # Track to avoid duplicates
 
         for size in sizes:
-            # Extract number and unit
+            # Regex extracts number and unit: "6kg" → ("6", "kg")
             match = re.match(r'(\d+(?:\.\d+)?)\s*(kg|lb)', size.lower())
             if match:
                 value = float(match.group(1))
@@ -119,7 +158,11 @@ class ProductNormalizer:
 
     @staticmethod
     def _normalize_tags(tags: List[str]) -> List[str]:
-        """Normalize and deduplicate tags"""
+        """
+        Clean tags: lowercase, strip whitespace, remove duplicates.
+
+        Example: ["Puppy", " GRAIN-FREE "] → ["puppy", "grain-free"]
+        """
         normalized = []
         for tag in tags:
             # Lowercase and remove extra spaces
@@ -131,10 +174,13 @@ class ProductNormalizer:
     @staticmethod
     def _determine_breed_size(product: Dict) -> List[str]:
         """
-        Determine compatible breed sizes based on product info
+        Infer which dog sizes this product is suitable for.
 
-        Returns:
-            List of breed sizes: small, medium, large, giant
+        Logic:
+            - "Small Breed" in name → ["small"]
+            - "Large Breed" in name → ["large", "giant"]
+            - Puppy formula → all sizes
+            - Default → ["medium", "large"]
         """
         name = product.get('name', '').lower()
         tags = product.get('tags', [])
@@ -163,10 +209,12 @@ class ProductNormalizer:
     @staticmethod
     def _determine_life_stage(product: Dict) -> List[str]:
         """
-        Determine life stage(s) product is formulated for
+        Infer which life stages this product is suitable for.
 
-        Returns:
-            List of stages: puppy, adult, senior, all-life-stages
+        Logic:
+            - "Puppy" in name/tags → ["puppy"]
+            - AAFCO "all life stages" → ["puppy", "adult", "senior"]
+            - Default → ["adult"]
         """
         name = product.get('name', '').lower()
         tags = product.get('tags', [])
@@ -192,22 +240,27 @@ class ProductNormalizer:
         return stages
 
 
-class ProductValidator:
-    """Validate product data quality"""
+# ============================================
+# ProductValidator Class
+# ============================================
 
-    REQUIRED_FIELDS = ['brand', 'name']
-    RECOMMENDED_FIELDS = ['protein_pct', 'fat_pct', 'ingredients']
+class ProductValidator:
+    """
+    Validates product data quality before MongoDB insertion.
+
+    Checks required fields, recommended fields, and reasonable value ranges.
+    """
+
+    REQUIRED_FIELDS = ['brand', 'name']  # Must have (invalid without)
+    RECOMMENDED_FIELDS = ['protein_pct', 'fat_pct', 'ingredients']  # Should have
 
     @staticmethod
     def validate(product: Dict) -> tuple[bool, List[str]]:
         """
-        Validate product data
-
-        Args:
-            product: Product document
+        Validate a product document.
 
         Returns:
-            Tuple of (is_valid, list of warnings)
+            (is_valid, warnings) - is_valid=True if required fields present
         """
         warnings = []
 
@@ -238,8 +291,12 @@ class ProductValidator:
         return is_valid, warnings
 
 
+# ============================================
+# Test Code (runs when executed directly)
+# ============================================
+
 if __name__ == '__main__':
-    # Test normalizer
+    # Example usage with sample data
     sample_scraped = {
         'brand': 'Orijen',
         'name': 'Original Puppy',
