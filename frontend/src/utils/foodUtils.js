@@ -236,6 +236,28 @@ export function buildComparisonSections(foodA, foodB) {
 
   const sections = [];
 
+  // Match Score section
+  const scoreA = foodA.matchScore;
+  const scoreB = foodB.matchScore;
+  const scoreRows = [
+    createSmartCompareRow(
+      'Match Score',
+      Number.isFinite(scoreA) ? `${scoreA}/100` : '—',
+      Number.isFinite(scoreB) ? `${scoreB}/100` : '—',
+      scoreA,
+      scoreB,
+      'higher'
+    ),
+  ].filter(Boolean);
+
+  if (scoreRows.length) {
+    sections.push({
+      title: 'Match Score',
+      icon: '⭐',
+      rows: scoreRows,
+    });
+  }
+
   // Price & basics section
   const priceA = foodA.price;
   const priceB = foodB.price;
@@ -286,7 +308,75 @@ export function buildComparisonSections(foodA, foodB) {
     ].filter(Boolean),
   });
 
-  // Analysis section
+  // Nutrition section — direct numeric fields for key metrics
+  const nutritionRows = [
+    createSmartCompareRow(
+      'Protein',
+      Number.isFinite(foodA.protein) ? `${foodA.protein}%` : null,
+      Number.isFinite(foodB.protein) ? `${foodB.protein}%` : null,
+      foodA.protein,
+      foodB.protein,
+      'higher'
+    ),
+    createSmartCompareRow(
+      'Fat',
+      Number.isFinite(foodA.fat) ? `${foodA.fat}%` : null,
+      Number.isFinite(foodB.fat) ? `${foodB.fat}%` : null,
+      foodA.fat,
+      foodB.fat,
+      null
+    ),
+    createSmartCompareRow(
+      'Fiber',
+      Number.isFinite(foodA.fiber) ? `${foodA.fiber}%` : null,
+      Number.isFinite(foodB.fiber) ? `${foodB.fiber}%` : null,
+      foodA.fiber,
+      foodB.fiber,
+      'lower'
+    ),
+    createSmartCompareRow(
+      'Omega-3',
+      Number.isFinite(foodA.omega3) ? `${foodA.omega3}%` : null,
+      Number.isFinite(foodB.omega3) ? `${foodB.omega3}%` : null,
+      foodA.omega3,
+      foodB.omega3,
+      'higher'
+    ),
+    createSmartCompareRow(
+      'Omega-6',
+      Number.isFinite(foodA.omega6) ? `${foodA.omega6}%` : null,
+      Number.isFinite(foodB.omega6) ? `${foodB.omega6}%` : null,
+      foodA.omega6,
+      foodB.omega6,
+      'higher'
+    ),
+    createSmartCompareRow(
+      'Calories/cup',
+      Number.isFinite(foodA.kcalPerCup) ? `${foodA.kcalPerCup} kcal` : null,
+      Number.isFinite(foodB.kcalPerCup) ? `${foodB.kcalPerCup} kcal` : null,
+      foodA.kcalPerCup,
+      foodB.kcalPerCup,
+      null
+    ),
+    createSmartCompareRow(
+      'Calories/kg',
+      Number.isFinite(foodA.kcalPerKg) ? `${foodA.kcalPerKg} kcal` : null,
+      Number.isFinite(foodB.kcalPerKg) ? `${foodB.kcalPerKg} kcal` : null,
+      foodA.kcalPerKg,
+      foodB.kcalPerKg,
+      null
+    ),
+  ].filter(Boolean);
+
+  if (nutritionRows.length) {
+    sections.push({
+      title: 'Key Nutrition',
+      icon: '🔬',
+      rows: nutritionRows,
+    });
+  }
+
+  // Full Guaranteed Analysis (from detail pairs)
   const analysisRows = [];
   const analysisA = mapFromPairs(foodA.detail?.analysis);
   const analysisB = mapFromPairs(foodB.detail?.analysis);
@@ -319,7 +409,7 @@ export function buildComparisonSections(foodA, foodB) {
   if (analysisRows.length) {
     sections.push({
       title: 'Guaranteed Analysis',
-      icon: '🔬',
+      icon: '📋',
       rows: analysisRows.filter(Boolean),
     });
   }

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FoodCard from '../components/FoodCard';
 import ComparisonTool from '../components/ComparisonTool';
+import FilterBar from '../components/FilterBar';
 import { getRecommendations, transformRecommendation } from '../api/petApi';
 import { formatCompareLabel } from '../utils/foodUtils';
 import '../styles/recommendation.css';
@@ -27,6 +28,8 @@ const Recommendations = () => {
   // Filter state
   const [selectedBrands, setSelectedBrands] = useState(new Set());
   const [priceRangeIndex, setPriceRangeIndex] = useState(0);
+  const [selectedProteins, setSelectedProteins] = useState(new Set());
+  const [grainFreeOnly, setGrainFreeOnly] = useState(false);
 
   // Derive available brands from loaded foods
   const availableBrands = useMemo(() => {
@@ -34,8 +37,45 @@ const Recommendations = () => {
     return brands;
   }, [foods]);
 
+  // Derive available protein sources with counts from loaded foods
+  const availableProteins = useMemo(() => {
+    const counts = {};
+    foods.forEach((f) => {
+      if (f.primaryProteins) {
+        f.primaryProteins
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean)
+          .forEach((p) => {
+            counts[p] = (counts[p] || 0) + 1;
+          });
+      }
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [foods]);
+
   // Check if any filter is active
-  const hasActiveFilters = selectedBrands.size > 0 || priceRangeIndex > 0;
+  const hasActiveFilters = selectedBrands.size > 0 || priceRangeIndex > 0 || selectedProteins.size > 0 || grainFreeOnly;
+
+  // Build active filter chips for display
+  const activeFilterChips = useMemo(() => {
+    const chips = [];
+    selectedBrands.forEach((brand) => {
+      chips.push({ type: 'brand', label: brand, value: brand });
+    });
+    selectedProteins.forEach((protein) => {
+      chips.push({ type: 'protein', label: protein.charAt(0).toUpperCase() + protein.slice(1), value: protein });
+    });
+    if (priceRangeIndex > 0) {
+      chips.push({ type: 'price', label: PRICE_RANGES[priceRangeIndex].label, value: priceRangeIndex });
+    }
+    if (grainFreeOnly) {
+      chips.push({ type: 'grainFree', label: 'Grain-Free Only', value: true });
+    }
+    return chips;
+  }, [selectedBrands, selectedProteins, priceRangeIndex, grainFreeOnly]);
 
   // Apply filters then sort
   const displayFoods = useMemo(() => {
@@ -53,6 +93,23 @@ const Recommendations = () => {
         if (!Number.isFinite(food.price)) return false;
         return food.price >= range.min && food.price < range.max;
       });
+    }
+
+    // Protein source filter
+    if (selectedProteins.size > 0) {
+      list = list.filter((food) => {
+        if (!food.primaryProteins) return false;
+        const foodProteins = food.primaryProteins
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
+        return foodProteins.some((p) => selectedProteins.has(p));
+      });
+    }
+
+    // Grain-free filter
+    if (grainFreeOnly) {
+      list = list.filter((food) => food.grainFree);
     }
 
     // Sort
@@ -93,7 +150,7 @@ const Recommendations = () => {
     }
 
     return sorted;
-  }, [foods, sortOption, selectedBrands, priceRangeIndex]);
+  }, [foods, sortOption, selectedBrands, priceRangeIndex, selectedProteins, grainFreeOnly]);
 
   const resultsLabel = useMemo(() => {
     const count = displayFoods.length;
@@ -109,7 +166,6 @@ const Recommendations = () => {
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
-        // Get pet data from localStorage
         const storedPetData = JSON.parse(localStorage.getItem('petData') || '{}');
         if (!storedPetData || !storedPetData.ageGroup) {
           navigate('/');
@@ -117,10 +173,7 @@ const Recommendations = () => {
         }
         setPetData(storedPetData);
 
-        // Get pet ID
         let petId = localStorage.getItem('petId');
-
-        // Fetch recommendations
         const response = await getRecommendations(petId);
         const recommendations = response.recommendations || [];
         const transformedFoods = recommendations.map((item, index) => transformRecommendation(item, index));
@@ -131,7 +184,6 @@ const Recommendations = () => {
       } catch (err) {
         console.error('Failed to load recommendations:', err);
 
-        // If 404, clear stale data and redirect to form
         if (err.response?.status === 404) {
           localStorage.removeItem('petId');
           localStorage.removeItem('petData');
@@ -171,20 +223,12 @@ const Recommendations = () => {
   };
 
   const formatAgeGroup = (ageGroup) => {
-    const map = {
-      puppy: 'Puppy',
-      adult: 'Adult',
-      senior: 'Senior'
-    };
+    const map = { puppy: 'Puppy', adult: 'Adult', senior: 'Senior' };
     return map[ageGroup?.toLowerCase()] || ageGroup;
   };
 
   const formatGoal = (goal) => {
-    const map = {
-      maintenance: 'Maintenance',
-      'weight-loss': 'Weight Loss',
-      'muscle-gain': 'Muscle Gain'
-    };
+    const map = { maintenance: 'Maintenance', 'weight-loss': 'Weight Loss', 'muscle-gain': 'Muscle Gain' };
     return map[goal?.toLowerCase()] || goal;
   };
 
@@ -232,14 +276,12 @@ const Recommendations = () => {
     });
   };
 
-  const handleSortChange = (event) => {
-    setSortOption(event.target.value);
-  };
-
   const handleResetAll = useCallback(() => {
     setSortOption('default');
     setSelectedBrands(new Set());
     setPriceRangeIndex(0);
+    setSelectedProteins(new Set());
+    setGrainFreeOnly(false);
   }, []);
 
   const toggleBrand = useCallback((brand) => {
@@ -251,10 +293,45 @@ const Recommendations = () => {
     });
   }, []);
 
+  const toggleProtein = useCallback((protein) => {
+    setSelectedProteins((prev) => {
+      const next = new Set(prev);
+      if (next.has(protein)) next.delete(protein);
+      else next.add(protein);
+      return next;
+    });
+  }, []);
+
+  const removeFilterChip = useCallback((chip) => {
+    switch (chip.type) {
+      case 'brand':
+        setSelectedBrands((prev) => {
+          const next = new Set(prev);
+          next.delete(chip.value);
+          return next;
+        });
+        break;
+      case 'protein':
+        setSelectedProteins((prev) => {
+          const next = new Set(prev);
+          next.delete(chip.value);
+          return next;
+        });
+        break;
+      case 'price':
+        setPriceRangeIndex(0);
+        break;
+      case 'grainFree':
+        setGrainFreeOnly(false);
+        break;
+      default:
+        break;
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="skeleton-page">
-        {/* Skeleton profile card */}
         <div className="skeleton-profile">
           <div className="skeleton-avatar skeleton-pulse" />
           <div className="skeleton-profile-details">
@@ -266,11 +343,7 @@ const Recommendations = () => {
             </div>
           </div>
         </div>
-
-        {/* Skeleton controls bar */}
         <div className="skeleton-controls skeleton-pulse" />
-
-        {/* Skeleton food cards */}
         <div className="skeleton-grid">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="skeleton-card">
@@ -386,83 +459,44 @@ const Recommendations = () => {
           <span className="dry-food-notice">Dry food only</span>
         </p>
 
-        {/* Controls bar: sort + results count + reset */}
+        {/* Results count + reset */}
         <div className="controls-bar">
-          <div className="controls-group">
-            <label className="controls-label" htmlFor="sort-select">
-              Sort by:
-            </label>
-            <select
-              id="sort-select"
-              className="sort-select"
-              value={sortOption}
-              onChange={handleSortChange}
+          <span className="results-count">{resultsLabel}</span>
+          {(sortOption !== 'default' || hasActiveFilters) && (
+            <button
+              type="button"
+              id="clear-filters-btn"
+              className="clear-filters-btn"
+              onClick={handleResetAll}
             >
-              <option value="default">Recommended</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="protein-high">Protein: High to Low</option>
-              <option value="fat-low">Fat: Low to High</option>
-            </select>
-          </div>
-          <div className="controls-group">
-            <span className="results-count">{resultsLabel}</span>
-            {(sortOption !== 'default' || hasActiveFilters) && (
-              <button
-                type="button"
-                id="clear-filters-btn"
-                className="clear-filters-btn"
-                onClick={handleResetAll}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-                Reset All
-              </button>
-            )}
-          </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              Reset All
+            </button>
+          )}
         </div>
 
-        {/* Filter bar: brand pills + price range */}
+        {/* Filter bar */}
         {foods.length > 0 && (
-          <div className="filter-bar">
-            {/* Brand filter */}
-            {availableBrands.length > 1 && (
-              <div className="filter-section">
-                <span className="filter-section-label">Brand:</span>
-                <div className="filter-pills">
-                  {availableBrands.map((brand) => (
-                    <button
-                      key={brand}
-                      type="button"
-                      className={`filter-pill ${selectedBrands.has(brand) ? 'active' : ''}`}
-                      onClick={() => toggleBrand(brand)}
-                    >
-                      {brand}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Price range filter */}
-            <div className="filter-section">
-              <span className="filter-section-label">Price:</span>
-              <div className="filter-pills">
-                {PRICE_RANGES.map((range, idx) => (
-                  <button
-                    key={range.label}
-                    type="button"
-                    className={`filter-pill ${priceRangeIndex === idx ? 'active' : ''}`}
-                    onClick={() => setPriceRangeIndex(idx === priceRangeIndex ? 0 : idx)}
-                  >
-                    {range.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <FilterBar
+            availableBrands={availableBrands}
+            selectedBrands={selectedBrands}
+            toggleBrand={toggleBrand}
+            availableProteins={availableProteins}
+            selectedProteins={selectedProteins}
+            toggleProtein={toggleProtein}
+            grainFreeOnly={grainFreeOnly}
+            setGrainFreeOnly={setGrainFreeOnly}
+            priceRanges={PRICE_RANGES}
+            priceRangeIndex={priceRangeIndex}
+            setPriceRangeIndex={setPriceRangeIndex}
+            sortOption={sortOption}
+            setSortOption={setSortOption}
+            activeFilterChips={activeFilterChips}
+            removeFilterChip={removeFilterChip}
+          />
         )}
 
         <div className="food-section">

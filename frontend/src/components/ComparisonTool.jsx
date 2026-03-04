@@ -41,6 +41,19 @@ const ComparisonTool = ({
     return buildComparisonSections(foodA, foodB);
   }, [foodA, foodB]);
 
+  // Tally winner counts across all sections
+  const winnerSummary = useMemo(() => {
+    let winsA = 0;
+    let winsB = 0;
+    sections.forEach((section) => {
+      section.rows.forEach((row) => {
+        if (row.winnerA) winsA++;
+        if (row.winnerB) winsB++;
+      });
+    });
+    return { winsA, winsB };
+  }, [sections]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event) => {
@@ -233,30 +246,95 @@ const ComparisonTool = ({
             </div>
             <div className="compare-content" id="compare-content" hidden={sections.length === 0}>
               {foodA && foodB && (
-                <div className="compare-products">
-                  <div className="compare-product-card compare-product-a">
-                    <div className="compare-product-header">
-                      <span className="compare-product-label">Product A</span>
+                <>
+                  <div className="compare-products">
+                    <div className={`compare-product-card compare-product-a ${winnerSummary.winsA > winnerSummary.winsB ? 'overall-winner' : ''}`}>
+                      <div className="compare-product-header">
+                        <span className="compare-product-label">Product A</span>
+                        {Number.isFinite(foodA.matchScore) && foodA.matchScore > 0 && (
+                          <span className="compare-product-score">{foodA.matchScore}</span>
+                        )}
+                      </div>
+                      <h4 id="compare-name-a" className="compare-product-name">
+                        {formatProductName(foodA)}
+                      </h4>
+                      <p id="compare-brand-a" className="compare-product-brand">
+                        {foodA.brand || 'Unknown Brand'}
+                      </p>
+                      {foodA.matchReasons && foodA.matchReasons.length > 0 && (
+                        <div className="compare-product-reasons">
+                          {foodA.matchReasons.slice(0, 3).map((reason, i) => (
+                            <span key={i} className="compare-reason-chip">
+                              <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+                                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M5.5 8l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              {reason}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {winnerSummary.winsA > winnerSummary.winsB && (
+                        <div className="compare-winner-badge">
+                          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                            <path d="M8 1l2.18 4.41L15 6.11l-3.5 3.41.83 4.82L8 12.01l-4.33 2.33.83-4.82L1 6.11l4.82-.7L8 1z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="0.8" />
+                          </svg>
+                          Winner ({winnerSummary.winsA} categories)
+                        </div>
+                      )}
                     </div>
-                    <h4 id="compare-name-a" className="compare-product-name">
-                      {formatProductName(foodA)}
-                    </h4>
-                    <p id="compare-brand-a" className="compare-product-brand">
-                      {foodA.brand || 'Unknown Brand'}
-                    </p>
-                  </div>
-                  <div className="compare-product-card compare-product-b">
-                    <div className="compare-product-header">
-                      <span className="compare-product-label">Product B</span>
+                    <div className={`compare-product-card compare-product-b ${winnerSummary.winsB > winnerSummary.winsA ? 'overall-winner' : ''}`}>
+                      <div className="compare-product-header">
+                        <span className="compare-product-label">Product B</span>
+                        {Number.isFinite(foodB.matchScore) && foodB.matchScore > 0 && (
+                          <span className="compare-product-score">{foodB.matchScore}</span>
+                        )}
+                      </div>
+                      <h4 id="compare-name-b" className="compare-product-name">
+                        {formatProductName(foodB)}
+                      </h4>
+                      <p id="compare-brand-b" className="compare-product-brand">
+                        {foodB.brand || 'Unknown Brand'}
+                      </p>
+                      {foodB.matchReasons && foodB.matchReasons.length > 0 && (
+                        <div className="compare-product-reasons">
+                          {foodB.matchReasons.slice(0, 3).map((reason, i) => (
+                            <span key={i} className="compare-reason-chip">
+                              <svg viewBox="0 0 16 16" fill="none" width="12" height="12">
+                                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M5.5 8l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                              {reason}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {winnerSummary.winsB > winnerSummary.winsA && (
+                        <div className="compare-winner-badge">
+                          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                            <path d="M8 1l2.18 4.41L15 6.11l-3.5 3.41.83 4.82L8 12.01l-4.33 2.33.83-4.82L1 6.11l4.82-.7L8 1z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="0.8" />
+                          </svg>
+                          Winner ({winnerSummary.winsB} categories)
+                        </div>
+                      )}
                     </div>
-                    <h4 id="compare-name-b" className="compare-product-name">
-                      {formatProductName(foodB)}
-                    </h4>
-                    <p id="compare-brand-b" className="compare-product-brand">
-                      {foodB.brand || 'Unknown Brand'}
-                    </p>
                   </div>
-                </div>
+
+                  {/* Winner summary bar */}
+                  {(winnerSummary.winsA > 0 || winnerSummary.winsB > 0) && (
+                    <div className="compare-summary-bar">
+                      <div className="compare-summary-side compare-summary-a">
+                        <span className="compare-summary-count">{winnerSummary.winsA}</span>
+                        <span className="compare-summary-text">wins</span>
+                      </div>
+                      <div className="compare-summary-vs">VS</div>
+                      <div className="compare-summary-side compare-summary-b">
+                        <span className="compare-summary-count">{winnerSummary.winsB}</span>
+                        <span className="compare-summary-text">wins</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <div id="compare-sections">

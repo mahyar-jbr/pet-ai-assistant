@@ -750,7 +750,7 @@ class RecommendationResponse(BaseModel):
 
 
 # ----------------------------------------------
-# Scoring Function 1: Breed Size (0-20 points)
+# Scoring Function 1: Breed Size (0-5 points)
 # ----------------------------------------------
 
 def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str, name: str) -> tuple[float, str]:
@@ -763,13 +763,13 @@ def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str, na
     - Medium dogs get appropriately sized kibble
 
     Scoring Table:
-    ┌─────────────┬───────────────┬────────────────┬───────────────┐
-    │ Dog Size    │ Small Kibble  │ Regular Kibble │ Large Kibble  │
-    ├─────────────┼───────────────┼────────────────┼───────────────┤
-    │ Small       │ 20 pts (best) │ 15 pts (ok)    │ 0 pts         │
-    │ Medium      │ 0 pts         │ 20 pts (best)  │ 0 pts         │
-    │ Large       │ 0 pts         │ 15 pts (ok)    │ 20 pts (best) │
-    └─────────────┴───────────────┴────────────────┴───────────────┘
+    ┌─────────────┬──────────────┬────────────────┬──────────────┐
+    │ Dog Size    │ Small Kibble │ Regular Kibble │ Large Kibble │
+    ├─────────────┼──────────────┼────────────────┼──────────────┤
+    │ Small       │ 5 pts (best) │ 3 pts (ok)     │ 0 pts        │
+    │ Medium      │ 0 pts        │ 5 pts (best)   │ 0 pts        │
+    │ Large       │ 0 pts        │ 3 pts (ok)     │ 5 pts (best) │
+    └─────────────┴──────────────┴────────────────┴──────────────┘
 
     Returns:
         tuple[float, str]: (score, reason_text)
@@ -779,27 +779,27 @@ def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str, na
 
     if pet_size == "small":
         if kibble == "small":
-            return 20.0, f"Small kibble — perfect for {name}'s small breed"
+            return 5.0, f"Small kibble — perfect for {name}'s small breed"
         elif kibble == "regular":
-            return 15.0, f"Regular kibble — compatible with {name}'s size"
+            return 3.0, f"Regular kibble — compatible with {name}'s size"
         else:
             return 0.0, ""
 
     elif pet_size == "medium":
         if kibble == "regular":
-            return 20.0, f"Regular kibble — perfect for {name}'s medium breed"
+            return 5.0, f"Regular kibble — perfect for {name}'s medium breed"
         else:
             return 0.0, ""
 
     elif pet_size == "large":
         if kibble == "large":
-            return 20.0, f"Large kibble — perfect for {name}'s large breed"
+            return 5.0, f"Large kibble — perfect for {name}'s large breed"
         elif kibble == "regular":
-            return 15.0, f"Regular kibble — compatible with {name}'s size"
+            return 3.0, f"Regular kibble — compatible with {name}'s size"
         else:
             return 0.0, ""
 
-    return 10.0, ""  # Fallback for unknown sizes
+    return 2.0, ""  # Fallback for unknown sizes
 
 
 # ----------------------------------------------
@@ -823,9 +823,9 @@ def calculate_activity_goal_score(
     Activity Levels: high, medium, low
     Weight Goals: muscle-gain, maintenance, weight-loss
 
-    General Rules:
-    - High activity + muscle-gain → Need HIGH protein (38%+) and HIGH fat (15%+)
-    - High activity + maintenance → Need HIGH protein (35%+), MODERATE fat (12-18%)
+    General Rules (companion dog thresholds):
+    - High activity + muscle-gain → Need HIGH protein (32%+) and HIGH fat (15%+)
+    - High activity + maintenance → Need HIGH protein (30%+), MODERATE fat (12-18%)
     - Low activity + weight-loss → Need ADEQUATE protein, LOW fat (<12%), HIGH fiber (5%+)
 
     Returns:
@@ -840,10 +840,10 @@ def calculate_activity_goal_score(
     if activity == "high":
         if goal == "muscle-gain":
             # Need high protein AND high fat
-            if protein_pct >= 38:
+            if protein_pct >= 32:
                 score += 20
                 reasons.append(f"High protein ({protein_pct}%) supports {name}'s muscle building goal")
-            elif protein_pct >= 35:
+            elif protein_pct >= 28:
                 score += 15
                 reasons.append(f"Good protein ({protein_pct}%) for {name}'s active lifestyle")
 
@@ -855,10 +855,10 @@ def calculate_activity_goal_score(
 
         elif goal == "maintenance":
             # Need high protein, moderate fat
-            if protein_pct >= 35:
+            if protein_pct >= 30:
                 score += 20
                 reasons.append(f"Great protein ({protein_pct}%) for {name}'s active lifestyle")
-            elif protein_pct >= 30:
+            elif protein_pct >= 26:
                 score += 15
 
             if 12 <= fat_pct <= 18:
@@ -869,7 +869,7 @@ def calculate_activity_goal_score(
 
         elif goal == "weight-loss":
             # High protein, lower fat
-            if protein_pct >= 35:
+            if protein_pct >= 30:
                 score += 20
                 reasons.append(f"High protein ({protein_pct}%) preserves {name}'s muscle during weight loss")
 
@@ -882,10 +882,10 @@ def calculate_activity_goal_score(
     # Medium Activity Dogs
     elif activity == "medium":
         if goal == "maintenance":
-            if 30 <= protein_pct <= 38:
+            if 25 <= protein_pct <= 35:
                 score += 20
                 reasons.append(f"Balanced protein ({protein_pct}%) for {name}'s moderate activity")
-            elif protein_pct >= 28:
+            elif protein_pct >= 22:
                 score += 15
 
             if 12 <= fat_pct <= 18:
@@ -893,7 +893,7 @@ def calculate_activity_goal_score(
                 reasons.append(f"Balanced fat ({fat_pct}%) supports {name}'s maintenance goal")
 
         elif goal == "muscle-gain":
-            if protein_pct >= 35:
+            if protein_pct >= 30:
                 score += 20
                 reasons.append(f"High protein ({protein_pct}%) supports {name}'s muscle building goal")
 
@@ -902,7 +902,7 @@ def calculate_activity_goal_score(
                 reasons.append(f"Good fat ({fat_pct}%) provides energy for {name}")
 
         elif goal == "weight-loss":
-            if protein_pct >= 30:
+            if protein_pct >= 26:
                 score += 15
 
             if fat_pct < 12:
@@ -914,7 +914,7 @@ def calculate_activity_goal_score(
     # Low Activity Dogs
     elif activity == "low":
         if goal == "weight-loss":
-            if protein_pct >= 28:
+            if protein_pct >= 25:
                 score += 15
                 reasons.append(f"Adequate protein ({protein_pct}%) for {name}'s lower activity level")
 
@@ -925,7 +925,7 @@ def calculate_activity_goal_score(
                 score += 15
 
         elif goal == "maintenance":
-            if 28 <= protein_pct <= 35:
+            if 22 <= protein_pct <= 30:
                 score += 20
                 reasons.append(f"Balanced protein ({protein_pct}%) for {name}'s lower activity level")
 
@@ -935,7 +935,7 @@ def calculate_activity_goal_score(
 
         elif goal == "muscle-gain":
             # Less common for low activity, but still score
-            if protein_pct >= 35:
+            if protein_pct >= 30:
                 score += 15
             if fat_pct >= 12:
                 score += 10
@@ -954,7 +954,7 @@ def calculate_nutritional_quality_score(
     omega_3: Optional[float],
     dha: Optional[float],
     epa: Optional[float],
-    grain_free: bool,
+    kcal_per_kg: Optional[int],
     name: str = "your dog"
 ) -> tuple[float, List[str]]:
     """
@@ -963,11 +963,11 @@ def calculate_nutritional_quality_score(
     This rewards high-quality nutrition regardless of the dog's specific needs.
 
     Point Breakdown:
-    - Protein quality:  0-10 pts (38%+ = 10, 35%+ = 8, 30%+ = 5)
-    - Omega-3 content:  0-3 pts  (0.8%+ = 3, 0.5%+ = 2)
-    - DHA content:      0-2 pts  (0.3%+ = 2, 0.2%+ = 1)
-    - Grain-free:       0-5 pts  (yes = 5)
-    - Fat balance:      0-5 pts  (12-18% = 5, 10-20% = 3)
+    - Protein quality:    0-10 pts (30%+ = 10, 27%+ = 8, 24%+ = 5)
+    - Omega-3 content:    0-3 pts  (0.8%+ = 3, 0.5%+ = 2)
+    - DHA content:        0-2 pts  (0.3%+ = 2, 0.2%+ = 1)
+    - Caloric density:    0-5 pts  (3500-4200 = 5, 3000-4500 = 3)
+    - Fat balance:        0-5 pts  (12-18% = 5, 10-20% = 3)
 
     Returns:
         tuple[float, List[str]]: (score capped at 25, list of reasons)
@@ -975,14 +975,14 @@ def calculate_nutritional_quality_score(
     score = 0.0
     reasons = []
 
-    # Protein quality (0-10 points)
-    if protein_pct >= 38:
+    # Protein quality (0-10 points) — companion dog thresholds
+    if protein_pct >= 30:
         score += 10
         reasons.append(f"Premium protein content ({protein_pct}%) for {name}")
-    elif protein_pct >= 35:
+    elif protein_pct >= 27:
         score += 8
         reasons.append(f"High protein content ({protein_pct}%) for {name}")
-    elif protein_pct >= 30:
+    elif protein_pct >= 24:
         score += 5
 
     # Omega-3/DHA/EPA for joints and brain (0-5 points)
@@ -998,10 +998,12 @@ def calculate_nutritional_quality_score(
     elif dha and dha >= 0.2:
         score += 1
 
-    # Grain-free (0-5 points)
-    if grain_free:
+    # Caloric density (0-5 points) — replaces grain-free bonus
+    if kcal_per_kg and 3500 <= kcal_per_kg <= 4200:
         score += 5
-        reasons.append(f"Grain-free formula for {name}")
+        reasons.append(f"Optimal caloric density for {name}")
+    elif kcal_per_kg and 3000 <= kcal_per_kg <= 4500:
+        score += 3
 
     # Fat quality (0-5 points)
     if 12 <= fat_pct <= 18:
@@ -1025,7 +1027,7 @@ def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str, 
     Checks for premium ingredient indicators:
     - Fresh/raw/whole meat in first 5:  0-5 pts (matches quality keyword + protein source)
     - Multiple proteins:                0-3 pts (3+ sources = 3, 2 sources = 2)
-    - No controversial:                 0-2 pts (no "by-product", "meal", "digest", "artificial")
+    - No controversial:                 0-2 pts (no "digest", "artificial")
 
     Args:
         ingredients: Comma-separated ingredient list string
@@ -1069,13 +1071,121 @@ def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str, 
         score += 2
 
     # No controversial ingredients (0-2 points)
-    controversial = ['by-product', 'meal', 'digest', 'artificial']
+    controversial = ['digest', 'artificial']
     if not any(word in ingredients_lower for word in controversial):
         score += 2
         reasons.append(f"No controversial ingredients — clean nutrition for {name}")
 
     # Cap at 10 points max
     return min(score, 10.0), reasons
+
+
+# ----------------------------------------------
+# Scoring Function 5: Life Stage Nutrition (0-15 points)
+# ----------------------------------------------
+
+def calculate_life_stage_score(
+    life_stage: str,
+    pet_age_group: str,
+    calcium_pct: float,
+    phosphorus_pct: float,
+    dha: Optional[float],
+    fiber_pct: float,
+    omega_3: Optional[float],
+    name: str = "your dog"
+) -> tuple[float, List[str]]:
+    """
+    Calculate life stage nutrition score based on age-specific needs.
+
+    Different life stages have distinct nutritional requirements:
+    - Puppies need Ca:P ratio for bone growth + DHA for brain development
+    - Seniors need fiber for digestion + Omega-3 for aging joints
+    - Adults need balanced nutrients + life stage formulation match
+
+    Point Breakdown by Life Stage:
+    ┌──────────┬──────────────────────────────┬──────────┐
+    │ Stage    │ Criteria                     │ Points   │
+    ├──────────┼──────────────────────────────┼──────────┤
+    │ Puppy    │ Life stage match             │ 0-3 pts  │
+    │          │ Ca:P ratio (1.0-1.8 optimal) │ 0-5 pts  │
+    │          │ DHA for brain development    │ 0-4 pts  │
+    ├──────────┼──────────────────────────────┼──────────┤
+    │ Senior   │ Life stage match             │ 0-3 pts  │
+    │          │ Fiber for digestion          │ 0-5 pts  │
+    │          │ Omega-3 for joints           │ 0-5 pts  │
+    ├──────────┼──────────────────────────────┼──────────┤
+    │ Adult    │ Life stage match             │ 0-5 pts  │
+    │          │ Ca:P balance                 │ 0-5 pts  │
+    │          │ Omega-3 general bonus        │ 0-3 pts  │
+    └──────────┴──────────────────────────────┴──────────┘
+
+    Returns:
+        tuple[float, List[str]]: (score capped at 15, list of reasons)
+    """
+    score = 0.0
+    reasons = []
+    age = pet_age_group.lower()
+    stage = life_stage.lower()
+
+    # Calculate Ca:P ratio (guard against zero division)
+    ca_p_ratio = calcium_pct / phosphorus_pct if phosphorus_pct and phosphorus_pct > 0 else 0
+
+    if age == "puppy":
+        # Life stage match
+        if stage in ["puppy", "all"]:
+            score += 3
+            reasons.append(f"Formulated for {name}'s puppy life stage")
+
+        # Ca:P ratio for growing bones
+        if 1.0 <= ca_p_ratio <= 1.8:
+            score += 5
+            reasons.append(f"Optimal calcium-phosphorus ratio for {name}'s growing bones")
+        elif 0.8 <= ca_p_ratio <= 2.0:
+            score += 3
+
+        # DHA for brain and eye development
+        if dha and dha >= 0.1:
+            score += 4
+            reasons.append(f"DHA ({dha}%) supports {name}'s brain and eye development")
+        elif dha and dha >= 0.05:
+            score += 2
+
+    elif age == "senior":
+        # Life stage match
+        if stage in ["senior", "all"]:
+            score += 3
+            reasons.append(f"Formulated for {name}'s senior life stage")
+
+        # Fiber for senior digestion
+        if fiber_pct >= 5:
+            score += 5
+            reasons.append(f"High fiber ({fiber_pct}%) supports {name}'s senior digestion")
+        elif fiber_pct >= 3.5:
+            score += 3
+
+        # Omega-3 for aging joints
+        if omega_3 and omega_3 >= 0.8:
+            score += 5
+            reasons.append(f"Excellent Omega-3 ({omega_3}%) for {name}'s aging joints")
+        elif omega_3 and omega_3 >= 0.5:
+            score += 3
+
+    elif age == "adult":
+        # Life stage match
+        if stage in ["adult", "all"]:
+            score += 5
+            reasons.append(f"Formulated for {name}'s adult life stage")
+
+        # Balanced Ca:P
+        if 1.0 <= ca_p_ratio <= 2.0:
+            score += 5
+
+        # General nutrient bonus
+        if omega_3 and omega_3 >= 0.3:
+            score += 3
+
+    # Cap at 15 points max
+    return min(score, 15.0), reasons
 
 
 # ----------------------------------------------
@@ -1088,13 +1198,23 @@ def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: d
 
     This is the main orchestrator that:
     1. Applies HARD FILTERS (allergies, kibble size) - returns 0 if failed
-    2. Calls all 4 scoring functions
+    2. Calls all 5 scoring functions
     3. Adds up total score (max 100 points)
     4. Returns score and list of reasons
 
+    Score Breakdown (max 100):
+    | Factor              | Points | Function                              |
+    |---------------------|--------|---------------------------------------|
+    | Activity + Diet Goal| 0-40   | calculate_activity_goal_score()       |
+    | Nutritional Quality | 0-25   | calculate_nutritional_quality_score() |
+    | Life Stage Nutrition| 0-15   | calculate_life_stage_score()          |
+    | Ingredient Quality  | 0-10   | calculate_ingredient_quality_score()  |
+    | Breed/Kibble Size   | 0-5    | calculate_breed_size_score()          |
+    | Price Value         | 0-5    | Percentile-based in orchestrator      |
+
     Args:
         product: MongoDB product document (dict)
-        pet_profile: Pet profile with keys: breedSize, activityLevel, weightGoal, allergies
+        pet_profile: Pet profile with keys: name, breedSize, ageGroup, activityLevel, weightGoal, allergies
         price_percentiles: Dict with keys "p25", "p50", "p75" for percentile-based price scoring
 
     Returns:
@@ -1106,6 +1226,7 @@ def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: d
     # --- Extract pet info from profile ---
     name = pet_profile.get("name", "your dog")
     pet_breed_size = pet_profile.get("breedSize", "medium")
+    pet_age_group = pet_profile.get("ageGroup", "adult")
     pet_activity = pet_profile.get("activityLevel", "medium")
     pet_goal = pet_profile.get("weightGoal", "maintenance")
     # Convert allergies to lowercase for case-insensitive matching
@@ -1113,13 +1234,16 @@ def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: d
 
     # --- Extract product info from MongoDB document ---
     product_kibble = product.get("kibble_size", "regular")
+    product_life_stage = product.get("life_stage", "all")
     protein_pct = product.get("protein_pct") or 0      # Use 0 if None
     fat_pct = product.get("fat_pct") or 0
     fiber_pct = product.get("fiber_pct") or 0
+    calcium_pct = product.get("calcium_pct") or 0
+    phosphorus_pct = product.get("phosphorus_pct") or 0
     omega_3 = product.get("omega_3_fatty_acids")       # Keep as None if missing
     dha = product.get("DHA")
     epa = product.get("EPA")
-    grain_free = product.get("grain_free", False)
+    kcal_per_kg = product.get("kcal_per_kg")
     ingredients = product.get("ingredients", "")
     primary_proteins = product.get("primary_proteins", "")
     allergen_tags = product.get("allergen_tags", "")
@@ -1160,25 +1284,27 @@ def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: d
     # ==========================================
     # Products that pass hard filters get scored on quality/fit.
 
-    # Score 1: Breed Size Match (0-20 points)
-    breed_score, breed_reason = calculate_breed_size_score(pet_breed_size, product_kibble, name)
-    total_score += breed_score
-    if breed_reason:
-        all_reasons.append(breed_reason)
-
-    # Score 2: Activity + Weight Goal Match (0-40 points) - Most Important!
+    # Score 1: Activity + Weight Goal Match (0-40 points) - Most Important!
     activity_score, activity_reasons = calculate_activity_goal_score(
         pet_activity, pet_goal, protein_pct, fat_pct, fiber_pct, name
     )
     total_score += activity_score
-    all_reasons.extend(activity_reasons)  # extend() adds all items from list
+    all_reasons.extend(activity_reasons)
 
-    # Score 3: Nutritional Quality (0-25 points)
+    # Score 2: Nutritional Quality (0-25 points)
     nutrition_score, nutrition_reasons = calculate_nutritional_quality_score(
-        protein_pct, fat_pct, omega_3, dha, epa, grain_free, name
+        protein_pct, fat_pct, omega_3, dha, epa, kcal_per_kg, name
     )
     total_score += nutrition_score
     all_reasons.extend(nutrition_reasons)
+
+    # Score 3: Life Stage Nutrition (0-15 points)
+    life_stage_score, life_stage_reasons = calculate_life_stage_score(
+        product_life_stage, pet_age_group, calcium_pct, phosphorus_pct,
+        dha, fiber_pct, omega_3, name
+    )
+    total_score += life_stage_score
+    all_reasons.extend(life_stage_reasons)
 
     # Score 4: Ingredient Quality (0-10 points)
     ingredient_score, ingredient_reasons = calculate_ingredient_quality_score(
@@ -1187,8 +1313,13 @@ def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: d
     total_score += ingredient_score
     all_reasons.extend(ingredient_reasons)
 
-    # Score 5: Price Value (0-5 points) — percentile-based
-    # Cheaper products score higher relative to the candidate pool
+    # Score 5: Breed/Kibble Size Match (0-5 points)
+    breed_score, breed_reason = calculate_breed_size_score(pet_breed_size, product_kibble, name)
+    total_score += breed_score
+    if breed_reason:
+        all_reasons.append(breed_reason)
+
+    # Score 6: Price Value (0-5 points) — percentile-based, 3-5 range
     price_score = 0.0
     if price_per_kg and price_per_kg > 0 and price_percentiles:
         if price_per_kg <= price_percentiles["p25"]:
@@ -1198,11 +1329,11 @@ def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: d
             price_score = 4.0
             all_reasons.append(f"Good value for {name}")
         elif price_per_kg <= price_percentiles["p75"]:
-            price_score = 3.0
+            price_score = 3.5
         else:
-            price_score = 2.0
+            price_score = 3.0
     else:
-        price_score = 2.0  # Neutral score when pricing info is missing
+        price_score = 4.0  # Neutral score when pricing info is missing
 
     total_score += price_score
 

@@ -6,16 +6,20 @@ A full-stack dog food recommendation app that helps owners find the best food fo
 
 ## Features
 
-- **7-Step Guided Wizard** — Step-by-step pet profile creation with tooltips, examples, and common allergy chips
-- **Scoring Algorithm** — 5-factor, 100-point scoring system: breed/kibble size, activity+goal, nutritional quality, ingredient quality, price value
-- **Hard Filters** — Automatic allergen disqualification and kibble size incompatibility detection
+- **7-Step Guided Wizard** — Step-by-step pet profile creation with trust signals, visual cards, and common allergy chips
+- **Scoring Algorithm** — 6-factor, 100-point scoring system validated against veterinary science (AAFCO, NRC, WSAVA)
+  - Activity+goal (40pts), nutritional quality (25pts), life-stage nutrition (15pts), ingredient quality (10pts), breed/kibble size (5pts), price value (5pts)
+- **Hard Filters** — Automatic allergen disqualification (set intersection) and kibble size incompatibility detection
+- **Life-Stage Nutrition** — Puppy Ca:P ratio + DHA scoring, senior fiber + omega-3 scoring, adult formulation matching
 - **Personalized Results** — Match reasons reference your dog by name and connect to their profile
-- **Brand & Price Filters** — Filter recommendations by brand (multi-select) and price range
+- **Popover Filters** — Filter by brand, protein source, grain-free, and price using popover dropdowns with counts (Airbnb/ASOS pattern)
+- **Food Card Zones** — Collapsed 7-element surface with expandable 3-zone detail panel (nutrition bars, ingredients, feeding calculator)
+- **Feeding Calculator** — Personalized daily cups, cost/day, cost/month, and bag duration based on your dog's weight and activity
 - **Side-by-Side Comparison** — Compare two foods with winner highlighting across all metrics
 - **Favorites** — Save top picks with localStorage persistence
 - **Allergy Safe Badges** — Visual confirmation that each recommended food passed allergen checks
 - **Shop Buttons** — Direct links to buy each product from retailers
-- **Responsive Design** — Works across desktop, tablet, and mobile
+- **Responsive Design** — Mobile bottom sheets, responsive grid, works across all devices
 
 ---
 
@@ -106,15 +110,21 @@ npm run dev
 
 ## Scoring Algorithm
 
-100-point max, 5 weighted factors:
+100-point max, 6 weighted factors. Validated against veterinary nutrition science (AAFCO, NRC, WSAVA, Tufts).
 
 | Factor | Points | What It Measures |
 |--------|--------|------------------|
-| Breed/Kibble Size | 0-20 | Kibble size compatibility with dog's breed size |
-| Activity + Goal | 0-40 | Protein/fat alignment with activity level and dietary goal |
-| Nutritional Quality | 0-25 | Omega-3, DHA, grain-free bonus, fat balance |
+| Activity + Goal | 0-40 | Protein/fat/fiber alignment with activity level and dietary goal |
+| Nutritional Quality | 0-25 | Omega-3, DHA, caloric density (3500-4200 kcal/kg optimal), fat balance |
+| Life Stage Nutrition | 0-15 | Puppy: Ca:P ratio + DHA for growth. Senior: fiber + omega-3. Adult: formulation match |
 | Ingredient Quality | 0-10 | Fresh/raw/whole meat in first 5 ingredients, protein diversity |
+| Breed/Kibble Size | 0-5 | Kibble size compatibility with dog's breed size |
 | Price Value | 0-5 | Percentile-based: cheaper relative to pool scores higher |
+
+**Key decisions:**
+- No grain-free bonus (FDA/DCM investigation)
+- Protein thresholds calibrated for companion dogs, not working/sled dogs
+- "Meal" and "by-product" not penalized (AAFCO-approved, vet-recommended)
 
 **Hard filters** eliminate products instantly:
 - Contains any of the pet's allergens (exact match via set intersection)
@@ -142,11 +152,14 @@ frontend/
 │   │   ├── PetForm.jsx          # 7-step wizard form
 │   │   └── Recommendations.jsx  # Results with filters, sort, comparison
 │   ├── components/
-│   │   ├── FoodCard.jsx         # Product card with score, reasons, shop button
+│   │   ├── FoodCard.jsx         # Product card: 7-element surface + 3-zone expand
+│   │   ├── FilterBar.jsx        # Popover filter buttons with counts
 │   │   ├── ComparisonTool.jsx   # Side-by-side comparison modal
 │   │   └── AllergyPills.jsx     # Tag input for allergies
 │   ├── api/petApi.js            # API client
-│   └── utils/foodUtils.js       # Helpers
+│   └── utils/
+│       ├── foodUtils.js         # Tag parsing, formatting, comparison logic
+│       └── feedingCalculator.js  # RER/MER formula, cups/day, cost, bag duration
 ├── .env.production              # API URL for deployment
 └── index.html                   # Meta tags, favicon, OG tags
 ```
