@@ -9,7 +9,9 @@ This file contains:
 - CRUD endpoints for pets and products
 - Recommendation engine with scoring algorithm
 
-Run with: uvicorn main:app --reload --port 8000
+Run with:
+  Dev:  uvicorn main:app --reload --port 8000
+  Prod: uvicorn main:app --host 0.0.0.0 --port $PORT
 API docs: http://localhost:8000/docs
 """
 
@@ -17,59 +19,144 @@ API docs: http://localhost:8000/docs
 # Imports
 # ============================================
 
-from fastapi import FastAPI, HTTPException          # Web framework and HTTP error handling
-from fastapi.middleware.cors import CORSMiddleware  # Allow cross-origin requests (frontend → backend)
-from motor.motor_asyncio import AsyncIOMotorClient  # Async MongoDB driver (non-blocking DB calls)
-from pydantic import BaseModel, Field               # Data validation and schema definition
-from typing import List, Optional                   # Type hints for better code clarity
-from bson import ObjectId                           # MongoDB's unique ID type
-import os                                           # Access environment variables
+from fastapi import FastAPI, HTTPException, Request  # Web framework and HTTP error handling
+from fastapi.middleware.cors import CORSMiddleware   # Allow cross-origin requests (frontend → backend)
+from fastapi.responses import JSONResponse           # Custom error responses
+from motor.motor_asyncio import AsyncIOMotorClient   # Async MongoDB driver (non-blocking DB calls)
+from pydantic import BaseModel, Field, field_validator  # Data validation and schema definition
+from typing import List, Optional                    # Type hints for better code clarity
+from bson import ObjectId                            # MongoDB's unique ID type
+from contextlib import asynccontextmanager           # For lifespan management
+import os                                            # Access environment variables
+import time                                          # For request duration tracking
+import logging                                       # Structured logging
+from slowapi import Limiter                          # Rate limiting
+from slowapi.util import get_remote_address          # Get client IP for rate limiting
+from slowapi.errors import RateLimitExceeded         # 429 error type
 
 # ============================================
-# FastAPI Application Setup
+# Logging Configuration
 # ============================================
 
-# Create the FastAPI app instance
-# - title/description/version appear in auto-generated docs at /docs
-app = FastAPI(
-    title="Pet AI Assistant API",
-    description="Backend API for pet food recommendations",
-    version="2.0.0"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
-
-# ============================================
-# CORS Configuration (Cross-Origin Resource Sharing)
-# ============================================
-
-# CORS allows the frontend (localhost:5173) to call the backend (localhost:8000)
-# Without this, browsers block cross-origin requests for security
-
-# WARNING: Allowing all origins ("*") is insecure for production! Remember to restrict this.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],        # Who can call this API ("*" = anyone, use specific domains in production)
-    allow_credentials=True,     # Allow cookies and authorization headers
-    allow_methods=["*"],        # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],        # Allow all headers
-)
+logger = logging.getLogger("petai")
 
 # ============================================
 # MongoDB Connection
 # ============================================
 
-# Get MongoDB URL from environment variable, or use localhost as default
-# This allows different URLs for development vs production
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-DATABASE_NAME = "petai"
+DATABASE_NAME = os.getenv("DATABASE_NAME", "petai")
 
-# Create async MongoDB client (Motor = async wrapper around PyMongo)
 client = AsyncIOMotorClient(MONGODB_URL)
-
-# Get references to database and collections
-# This is like running "use petai" then "db.pets" in mongosh
 database = client[DATABASE_NAME]
-pets_collection = database["pets"]          # Stores pet profiles
-products_collection = database["products"]  # Stores dog food products
+pets_collection = database["pets"]
+products_collection = database["products"]
+
+# ============================================
+# Application Lifespan (startup + shutdown)
+# ============================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown logic."""
+    # --- Startup ---
+    logger.info("Pet AI Assistant API starting up...")
+    try:
+        await client.admin.command("ping")
+        logger.info("MongoDB connection verified (database: %s)", DATABASE_NAME)
+    except Exception as e:
+        logger.error("MongoDB connection FAILED: %s", e)
+        raise
+
+    # Create indexes for query performance
+    await products_collection.create_index("life_stage")
+    await products_collection.create_index("breed_size")
+    await products_collection.create_index("format")
+    await products_collection.create_index("brand")
+    await products_collection.create_index([("format", 1), ("life_stage", 1)])
+    logger.info("MongoDB indexes ensured")
+
+    logger.info("Ready to accept requests!")
+    yield
+
+    # --- Shutdown ---
+    logger.info("Shutting down Pet AI Assistant API...")
+    client.close()
+    logger.info("MongoDB connection closed")
+
+# ============================================
+# FastAPI Application Setup
+# ============================================
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+
+app = FastAPI(
+    title="Pet AI Assistant API",
+    description="Backend API for pet food recommendations",
+    version="2.0.0",
+    lifespan=lifespan,
+)
+app.state.limiter = limiter
+
+# ============================================
+# CORS Configuration
+# ============================================
+
+# Read allowed origins from env (comma-separated), fallback to localhost for dev
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000"
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in ALLOWED_ORIGINS],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================
+# Request Logging Middleware
+# ============================================
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log every request with method, path, status, and duration."""
+    start = time.time()
+    response = await call_next(request)
+    duration_ms = (time.time() - start) * 1000
+    logger.info(
+        "%s %s → %d (%.0fms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
+
+# ============================================
+# Global Exception Handler
+# ============================================
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Return 429 with clear JSON message when rate limit is hit."""
+    return JSONResponse(status_code=429, content={"detail": f"Rate limit exceeded: {exc.detail}"})
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions — log details server-side, return safe message to client."""
+    logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 # ============================================
 # Pydantic Models (Request/Response Schemas)
@@ -88,12 +175,53 @@ class PetCreate(BaseModel):
     All fields except allergies are required.
     This model validates data BEFORE it reaches your endpoint code.
     """
-    name: str                               # Pet's name (required)
-    breedSize: str                          # "small", "medium", or "large" (required)
-    ageGroup: str                           # "puppy", "adult", or "senior" (required)
-    activityLevel: str                      # "low", "medium", or "high" (required)
-    weightGoal: str                         # "maintenance", "weight-loss", or "muscle-gain" (required)
-    allergies: Optional[List[str]] = []     # List of allergens, defaults to empty list
+    name: str = Field(..., min_length=1, max_length=50)
+    breedSize: str
+    ageGroup: str
+    activityLevel: str
+    weightGoal: str
+    allergies: Optional[List[str]] = Field(default=[], max_length=20)
+
+    @field_validator("breedSize")
+    @classmethod
+    def validate_breed_size(cls, v):
+        allowed = {"small", "medium", "large"}
+        if v.lower() not in allowed:
+            raise ValueError(f"breedSize must be one of: {', '.join(allowed)}")
+        return v
+
+    @field_validator("ageGroup")
+    @classmethod
+    def validate_age_group(cls, v):
+        allowed = {"puppy", "adult", "senior"}
+        if v.lower() not in allowed:
+            raise ValueError(f"ageGroup must be one of: {', '.join(allowed)}")
+        return v
+
+    @field_validator("activityLevel")
+    @classmethod
+    def validate_activity_level(cls, v):
+        allowed = {"low", "medium", "high"}
+        if v.lower() not in allowed:
+            raise ValueError(f"activityLevel must be one of: {', '.join(allowed)}")
+        return v
+
+    @field_validator("weightGoal")
+    @classmethod
+    def validate_weight_goal(cls, v):
+        allowed = {"maintenance", "weight-loss", "muscle-gain"}
+        if v.lower() not in allowed:
+            raise ValueError(f"weightGoal must be one of: {', '.join(allowed)}")
+        return v
+
+    @field_validator("allergies")
+    @classmethod
+    def validate_allergies(cls, v):
+        if v:
+            for allergy in v:
+                if len(allergy) > 50:
+                    raise ValueError("Each allergy must be 50 characters or less")
+        return v
 
 
 class PetResponse(BaseModel):
@@ -313,12 +441,7 @@ def product_helper(product) -> dict:
 
 @app.get("/")
 async def root():
-    """
-    Health check endpoint.
-
-    Used to verify the API is running.
-    Visit http://localhost:8000/ to see this response.
-    """
+    """Root endpoint — confirms API is running."""
     return {
         "status": "running",
         "message": "Pet AI Assistant API is up and running!",
@@ -326,8 +449,26 @@ async def root():
     }
 
 
+@app.get("/health")
+@limiter.exempt
+async def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    try:
+        await client.admin.command("ping")
+        db_status = "connected"
+    except Exception:
+        db_status = "disconnected"
+
+    return {
+        "status": "healthy" if db_status == "connected" else "unhealthy",
+        "database": db_status,
+        "version": "2.0.0",
+    }
+
+
 @app.post("/api/pets", response_model=PetResponse, status_code=201)
-async def create_pet(pet: PetCreate):
+@limiter.limit("10/minute")
+async def create_pet(request: Request, pet: PetCreate):
     """
     Create a new pet profile.
 
@@ -342,13 +483,8 @@ async def create_pet(pet: PetCreate):
     4. Convert to response format and return
     """
     try:
-        # Convert Pydantic model to dict for MongoDB
         pet_dict = pet.model_dump()
-
-        # Insert into MongoDB (returns InsertOneResult with inserted_id)
         result = await pets_collection.insert_one(pet_dict)
-
-        # Fetch the created document to get the full object with _id
         created_pet = await pets_collection.find_one({"_id": result.inserted_id})
 
         if created_pet:
@@ -356,8 +492,11 @@ async def create_pet(pet: PetCreate):
         else:
             raise HTTPException(status_code=500, detail="Failed to create pet")
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating pet: {str(e)}")
+        logger.error("Error creating pet: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to create pet")
 
 
 @app.get("/api/pets", response_model=List[PetResponse])
@@ -372,13 +511,13 @@ async def get_all_pets():
     """
     try:
         pets = []
-        # Async iteration over MongoDB cursor
         async for pet in pets_collection.find():
             pets.append(pet_helper(pet))
         return pets
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving pets: {str(e)}")
+        logger.error("Error retrieving pets: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve pets")
 
 
 @app.get("/api/pets/{pet_id}", response_model=PetResponse)
@@ -393,11 +532,9 @@ async def get_pet_by_id(pet_id: str):
     Example: GET /api/pets/507f1f77bcf86cd799439011
     """
     try:
-        # Validate that pet_id is a valid ObjectId format (24 hex characters)
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
-        # Query MongoDB (convert string to ObjectId for query)
         pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
 
         if pet:
@@ -406,9 +543,10 @@ async def get_pet_by_id(pet_id: str):
             raise HTTPException(status_code=404, detail="Pet not found")
 
     except HTTPException:
-        raise  # Re-raise HTTP exceptions as-is (don't convert to 500)
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving pet: {str(e)}")
+        logger.error("Error retrieving pet %s: %s", pet_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve pet")
 
 
 @app.put("/api/pets/{pet_id}", response_model=PetResponse)
@@ -427,21 +565,16 @@ async def update_pet(pet_id: str, pet: PetCreate):
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
-        # Convert new data to dict
         pet_dict = pet.model_dump()
 
-        # Update in MongoDB using $set operator
-        # $set replaces only the specified fields (not the entire document)
         result = await pets_collection.update_one(
-            {"_id": ObjectId(pet_id)},  # Filter: which document to update
-            {"$set": pet_dict}           # Update: replace these fields
+            {"_id": ObjectId(pet_id)},
+            {"$set": pet_dict}
         )
 
-        # Check if a document was found and updated
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Pet not found")
 
-        # Fetch and return the updated document
         updated_pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
 
         if updated_pet:
@@ -452,7 +585,8 @@ async def update_pet(pet_id: str, pet: PetCreate):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating pet: {str(e)}")
+        logger.error("Error updating pet %s: %s", pet_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to update pet")
 
 
 @app.delete("/api/pets/{pet_id}")
@@ -470,10 +604,8 @@ async def delete_pet(pet_id: str):
         if not ObjectId.is_valid(pet_id):
             raise HTTPException(status_code=400, detail="Invalid pet ID format")
 
-        # Delete from MongoDB
         result = await pets_collection.delete_one({"_id": ObjectId(pet_id)})
 
-        # Check if a document was actually deleted
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Pet not found")
 
@@ -482,7 +614,8 @@ async def delete_pet(pet_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting pet: {str(e)}")
+        logger.error("Error deleting pet %s: %s", pet_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to delete pet")
 
 
 # ============================================
@@ -542,7 +675,8 @@ async def get_all_products(
         return products
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving products: {str(e)}")
+        logger.error("Error retrieving products: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve products")
 
 
 @app.get("/api/products/{product_id}", response_model=ProductResponse)
@@ -569,7 +703,8 @@ async def get_product_by_id(product_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving product: {str(e)}")
+        logger.error("Error retrieving product %s: %s", product_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve product")
 
 
 # ============================================
@@ -604,19 +739,21 @@ class RecommendationResponse(BaseModel):
     - product: Full product details (ProductResponse)
     - score: Compatibility score from 0-100
     - match_percentage: Same as score, as integer for display
-    - reasons: List of human-readable explanations (e.g., "High protein for muscle building")
+    - reasons: List of human-readable explanations personalized with pet name
+    - allergy_safe: True if product passed allergen check (always True for returned products)
     """
     product: ProductResponse
     score: float
     match_percentage: int
     reasons: List[str]
+    allergy_safe: bool
 
 
 # ----------------------------------------------
 # Scoring Function 1: Breed Size (0-20 points)
 # ----------------------------------------------
 
-def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str) -> tuple[float, str]:
+def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str, name: str) -> tuple[float, str]:
     """
     Calculate breed size compatibility score.
 
@@ -642,23 +779,23 @@ def calculate_breed_size_score(pet_breed_size: str, product_kibble_size: str) ->
 
     if pet_size == "small":
         if kibble == "small":
-            return 20.0, "Perfect kibble size for small breed"
+            return 20.0, f"Small kibble — perfect for {name}'s small breed"
         elif kibble == "regular":
-            return 15.0, "Compatible kibble size"
+            return 15.0, f"Regular kibble — compatible with {name}'s size"
         else:
             return 0.0, ""
 
     elif pet_size == "medium":
         if kibble == "regular":
-            return 20.0, "Perfect kibble size for medium breed"
+            return 20.0, f"Regular kibble — perfect for {name}'s medium breed"
         else:
             return 0.0, ""
 
     elif pet_size == "large":
         if kibble == "large":
-            return 20.0, "Perfect kibble size for large breed"
+            return 20.0, f"Large kibble — perfect for {name}'s large breed"
         elif kibble == "regular":
-            return 15.0, "Compatible kibble size"
+            return 15.0, f"Regular kibble — compatible with {name}'s size"
         else:
             return 0.0, ""
 
@@ -674,7 +811,8 @@ def calculate_activity_goal_score(
     weight_goal: str,
     protein_pct: float,
     fat_pct: float,
-    fiber_pct: float
+    fiber_pct: float,
+    name: str
 ) -> tuple[float, List[str]]:
     """
     Calculate score based on activity level and dietary goals.
@@ -704,14 +842,14 @@ def calculate_activity_goal_score(
             # Need high protein AND high fat
             if protein_pct >= 38:
                 score += 20
-                reasons.append("Excellent protein for muscle building")
+                reasons.append(f"High protein ({protein_pct}%) supports {name}'s muscle building goal")
             elif protein_pct >= 35:
                 score += 15
-                reasons.append("Good protein for active dogs")
+                reasons.append(f"Good protein ({protein_pct}%) for {name}'s active lifestyle")
 
             if fat_pct >= 15:
                 score += 20
-                reasons.append("High energy from fat for active lifestyle")
+                reasons.append(f"High fat ({fat_pct}%) fuels {name}'s active lifestyle")
             elif fat_pct >= 12:
                 score += 10
 
@@ -719,13 +857,13 @@ def calculate_activity_goal_score(
             # Need high protein, moderate fat
             if protein_pct >= 35:
                 score += 20
-                reasons.append("Great protein for active dogs")
+                reasons.append(f"Great protein ({protein_pct}%) for {name}'s active lifestyle")
             elif protein_pct >= 30:
                 score += 15
 
             if 12 <= fat_pct <= 18:
                 score += 20
-                reasons.append("Balanced fat for maintenance")
+                reasons.append(f"Balanced fat ({fat_pct}%) supports {name}'s maintenance goal")
             elif fat_pct >= 15:
                 score += 15
 
@@ -733,11 +871,11 @@ def calculate_activity_goal_score(
             # High protein, lower fat
             if protein_pct >= 35:
                 score += 20
-                reasons.append("High protein helps maintain muscle during weight loss")
+                reasons.append(f"High protein ({protein_pct}%) preserves {name}'s muscle during weight loss")
 
             if fat_pct < 12 and fiber_pct >= 5:
                 score += 20
-                reasons.append("Lower fat and good fiber for weight management")
+                reasons.append(f"Low fat ({fat_pct}%) + high fiber ({fiber_pct}%) supports {name}'s weight loss")
             elif fat_pct < 15:
                 score += 10
 
@@ -746,22 +884,22 @@ def calculate_activity_goal_score(
         if goal == "maintenance":
             if 30 <= protein_pct <= 38:
                 score += 20
-                reasons.append("Balanced protein for moderate activity")
+                reasons.append(f"Balanced protein ({protein_pct}%) for {name}'s moderate activity")
             elif protein_pct >= 28:
                 score += 15
 
             if 12 <= fat_pct <= 18:
                 score += 20
-                reasons.append("Balanced fat for maintenance")
+                reasons.append(f"Balanced fat ({fat_pct}%) supports {name}'s maintenance goal")
 
         elif goal == "muscle-gain":
             if protein_pct >= 35:
                 score += 20
-                reasons.append("Good protein for muscle building")
+                reasons.append(f"High protein ({protein_pct}%) supports {name}'s muscle building goal")
 
             if fat_pct >= 15:
                 score += 15
-                reasons.append("Adequate fat for energy")
+                reasons.append(f"Good fat ({fat_pct}%) provides energy for {name}")
 
         elif goal == "weight-loss":
             if protein_pct >= 30:
@@ -769,7 +907,7 @@ def calculate_activity_goal_score(
 
             if fat_pct < 12:
                 score += 20
-                reasons.append("Lower fat supports weight loss")
+                reasons.append(f"Low fat ({fat_pct}%) supports {name}'s weight loss goal")
             elif fat_pct < 15:
                 score += 10
 
@@ -778,22 +916,22 @@ def calculate_activity_goal_score(
         if goal == "weight-loss":
             if protein_pct >= 28:
                 score += 15
-                reasons.append("Adequate protein for less active dogs")
+                reasons.append(f"Adequate protein ({protein_pct}%) for {name}'s lower activity level")
 
             if fat_pct < 12 and fiber_pct >= 5:
                 score += 25
-                reasons.append("Perfect for weight loss - low fat, high fiber")
+                reasons.append(f"Low fat ({fat_pct}%) + high fiber ({fiber_pct}%) — ideal for {name}'s weight loss")
             elif fat_pct < 12:
                 score += 15
 
         elif goal == "maintenance":
             if 28 <= protein_pct <= 35:
                 score += 20
-                reasons.append("Balanced nutrition for less active dogs")
+                reasons.append(f"Balanced protein ({protein_pct}%) for {name}'s lower activity level")
 
             if 10 <= fat_pct <= 15:
                 score += 20
-                reasons.append("Moderate fat prevents weight gain")
+                reasons.append(f"Moderate fat ({fat_pct}%) prevents weight gain for {name}")
 
         elif goal == "muscle-gain":
             # Less common for low activity, but still score
@@ -816,7 +954,8 @@ def calculate_nutritional_quality_score(
     omega_3: Optional[float],
     dha: Optional[float],
     epa: Optional[float],
-    grain_free: bool
+    grain_free: bool,
+    name: str = "your dog"
 ) -> tuple[float, List[str]]:
     """
     Calculate nutritional quality score based on premium ingredients.
@@ -839,35 +978,35 @@ def calculate_nutritional_quality_score(
     # Protein quality (0-10 points)
     if protein_pct >= 38:
         score += 10
-        reasons.append("Premium protein content")
+        reasons.append(f"Premium protein content ({protein_pct}%) for {name}")
     elif protein_pct >= 35:
         score += 8
-        reasons.append("High protein content")
+        reasons.append(f"High protein content ({protein_pct}%) for {name}")
     elif protein_pct >= 30:
         score += 5
 
     # Omega-3/DHA/EPA for joints and brain (0-5 points)
     if omega_3 and omega_3 >= 0.8:
         score += 3
-        reasons.append("Excellent Omega-3 for joints and coat")
+        reasons.append(f"Excellent Omega-3 ({omega_3}%) for {name}'s joints and coat")
     elif omega_3 and omega_3 >= 0.5:
         score += 2
 
     if dha and dha >= 0.3:
         score += 2
-        reasons.append("Good DHA for brain health")
+        reasons.append(f"Good DHA for {name}'s brain health")
     elif dha and dha >= 0.2:
         score += 1
 
     # Grain-free (0-5 points)
     if grain_free:
         score += 5
-        reasons.append("Grain-free formula")
+        reasons.append(f"Grain-free formula for {name}")
 
     # Fat quality (0-5 points)
     if 12 <= fat_pct <= 18:
         score += 5
-        reasons.append("Balanced fat content")
+        reasons.append(f"Balanced fat content ({fat_pct}%) for {name}")
     elif 10 <= fat_pct <= 20:
         score += 3
 
@@ -879,18 +1018,19 @@ def calculate_nutritional_quality_score(
 # Scoring Function 4: Ingredient Quality (0-10 points)
 # ----------------------------------------------
 
-def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str) -> tuple[float, List[str]]:
+def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str, name: str = "your dog") -> tuple[float, List[str]]:
     """
     Calculate ingredient quality score based on ingredient list analysis.
 
     Checks for premium ingredient indicators:
-    - Fresh meat first:      0-5 pts (looks for "fresh", "raw", "whole" in first 3 ingredients)
-    - Multiple proteins:     0-3 pts (3+ sources = 3, 2 sources = 2)
-    - No controversial:      0-2 pts (no "by-product", "meal", "digest", "artificial")
+    - Fresh/raw/whole meat in first 5:  0-5 pts (matches quality keyword + protein source)
+    - Multiple proteins:                0-3 pts (3+ sources = 3, 2 sources = 2)
+    - No controversial:                 0-2 pts (no "by-product", "meal", "digest", "artificial")
 
     Args:
         ingredients: Comma-separated ingredient list string
         primary_proteins: Comma-separated protein sources string
+        name: Pet's name for personalized reasons
 
     Returns:
         tuple[float, List[str]]: (score capped at 10, list of reasons)
@@ -900,18 +1040,31 @@ def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str) 
 
     ingredients_lower = ingredients.lower()
 
-    # Fresh meat first ingredient (0-5 points)
-    first_ingredients = ingredients_lower.split(',')[0:3]
-    fresh_keywords = ['fresh', 'raw', 'whole']
-    if any(keyword in ing for ing in first_ingredients for keyword in fresh_keywords):
+    # Fresh/raw/whole meat in primary ingredients (0-5 points)
+    # Only award points when a quality keyword appears alongside an actual protein source
+    # e.g. "fresh chicken" scores, but "raw oats" or "whole wheat" does not
+    first_ingredients = [ing.strip() for ing in ingredients_lower.split(',')[0:5]]
+    quality_keywords = ['fresh', 'raw', 'whole', 'deboned']
+    meat_indicators = [
+        'chicken', 'turkey', 'duck', 'quail', 'pheasant',          # poultry
+        'beef', 'bison', 'lamb', 'venison', 'pork', 'boar', 'goat',  # red meat
+        'salmon', 'herring', 'mackerel', 'trout', 'cod', 'pollock',  # fish
+        'whitefish', 'sardine', 'flounder', 'walleye', 'catfish',
+        'liver', 'heart', 'kidney',                                    # organs
+    ]
+    has_quality_meat = any(
+        any(kw in ing for kw in quality_keywords) and any(meat in ing for meat in meat_indicators)
+        for ing in first_ingredients
+    )
+    if has_quality_meat:
         score += 5
-        reasons.append("Fresh meat as primary ingredient")
+        reasons.append(f"Fresh meat as primary ingredient for {name}")
 
     # Multiple protein sources (0-3 points)
     protein_count = len([p.strip() for p in primary_proteins.split(',') if p.strip()])
     if protein_count >= 3:
         score += 3
-        reasons.append(f"Diverse protein sources ({protein_count} types)")
+        reasons.append(f"Diverse protein sources ({protein_count} types) for {name}")
     elif protein_count >= 2:
         score += 2
 
@@ -919,7 +1072,7 @@ def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str) 
     controversial = ['by-product', 'meal', 'digest', 'artificial']
     if not any(word in ingredients_lower for word in controversial):
         score += 2
-        reasons.append("No controversial ingredients")
+        reasons.append(f"No controversial ingredients — clean nutrition for {name}")
 
     # Cap at 10 points max
     return min(score, 10.0), reasons
@@ -929,7 +1082,7 @@ def calculate_ingredient_quality_score(ingredients: str, primary_proteins: str) 
 # Main Scoring Function: Orchestrates All Scores
 # ----------------------------------------------
 
-def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List[str]]:
+def score_product_for_pet(product: dict, pet_profile: dict, price_percentiles: dict = None) -> tuple[float, List[str]]:
     """
     Calculate overall compatibility score for a product given a pet profile.
 
@@ -942,6 +1095,7 @@ def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List
     Args:
         product: MongoDB product document (dict)
         pet_profile: Pet profile with keys: breedSize, activityLevel, weightGoal, allergies
+        price_percentiles: Dict with keys "p25", "p50", "p75" for percentile-based price scoring
 
     Returns:
         tuple[float, List[str]]: (total_score 0-100, list of reason strings)
@@ -950,6 +1104,7 @@ def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List
     all_reasons = []
 
     # --- Extract pet info from profile ---
+    name = pet_profile.get("name", "your dog")
     pet_breed_size = pet_profile.get("breedSize", "medium")
     pet_activity = pet_profile.get("activityLevel", "medium")
     pet_goal = pet_profile.get("weightGoal", "maintenance")
@@ -977,10 +1132,11 @@ def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List
     # no matter how good its nutrition is.
 
     # Hard Filter 1: Allergy check
-    # Split allergen_tags string into list: "chicken,beef" → ["chicken", "beef"]
-    product_allergens = [a.lower().strip() for a in allergen_tags.split(',') if a.strip()]
-    # Check if ANY pet allergy matches ANY product allergen
-    if any(allergy in product_allergens for allergy in pet_allergies):
+    # Split allergen_tags string into set: "chicken,beef" → {"chicken", "beef"}
+    # Uses set intersection for exact match — "fish" won't match "shellfish"
+    product_allergens = {a.lower().strip() for a in allergen_tags.split(',') if a.strip()}
+    pet_allergy_set = set(pet_allergies)
+    if product_allergens & pet_allergy_set:
         return 0.0, ["Contains allergens - NOT RECOMMENDED"]
 
     # Hard Filter 2: Kibble size incompatibility
@@ -1005,54 +1161,55 @@ def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List
     # Products that pass hard filters get scored on quality/fit.
 
     # Score 1: Breed Size Match (0-20 points)
-    breed_score, breed_reason = calculate_breed_size_score(pet_breed_size, product_kibble)
+    breed_score, breed_reason = calculate_breed_size_score(pet_breed_size, product_kibble, name)
     total_score += breed_score
     if breed_reason:
         all_reasons.append(breed_reason)
 
     # Score 2: Activity + Weight Goal Match (0-40 points) - Most Important!
     activity_score, activity_reasons = calculate_activity_goal_score(
-        pet_activity, pet_goal, protein_pct, fat_pct, fiber_pct
+        pet_activity, pet_goal, protein_pct, fat_pct, fiber_pct, name
     )
     total_score += activity_score
     all_reasons.extend(activity_reasons)  # extend() adds all items from list
 
     # Score 3: Nutritional Quality (0-25 points)
     nutrition_score, nutrition_reasons = calculate_nutritional_quality_score(
-        protein_pct, fat_pct, omega_3, dha, epa, grain_free
+        protein_pct, fat_pct, omega_3, dha, epa, grain_free, name
     )
     total_score += nutrition_score
     all_reasons.extend(nutrition_reasons)
 
     # Score 4: Ingredient Quality (0-10 points)
     ingredient_score, ingredient_reasons = calculate_ingredient_quality_score(
-        ingredients, primary_proteins
+        ingredients, primary_proteins, name
     )
     total_score += ingredient_score
     all_reasons.extend(ingredient_reasons)
 
-    # Score 5: Price Value (0-5 points)
+    # Score 5: Price Value (0-5 points) — percentile-based
+    # Cheaper products score higher relative to the candidate pool
     price_score = 0.0
-    if price_per_kg and price_per_kg > 0:
-        quality_points = nutrition_score + ingredient_score
-        value_ratio = quality_points / price_per_kg
-
-        if value_ratio >= 3.0:
+    if price_per_kg and price_per_kg > 0 and price_percentiles:
+        if price_per_kg <= price_percentiles["p25"]:
             price_score = 5.0
-            all_reasons.append("Excellent value for the quality")
-        elif value_ratio >= 2.2:
+            all_reasons.append(f"Excellent value for {name} — priced in bottom 25%")
+        elif price_per_kg <= price_percentiles["p50"]:
             price_score = 4.0
-            all_reasons.append("Good price for high quality")
-        elif value_ratio >= 1.5:
+            all_reasons.append(f"Good value for {name}")
+        elif price_per_kg <= price_percentiles["p75"]:
             price_score = 3.0
-        elif value_ratio >= 1.0:
-            price_score = 2.0
         else:
-            price_score = 1.0
+            price_score = 2.0
     else:
-        price_score = 2.5  # Neutral score when pricing info is missing
+        price_score = 2.0  # Neutral score when pricing info is missing
 
     total_score += price_score
+
+    # Allergy-safe reason — when pet has allergies and product passed the check
+    if pet_allergies:
+        allergen_list = ", ".join(pet_allergies)
+        all_reasons.append(f"Allergy safe — no {allergen_list} detected for {name}")
 
     return total_score, all_reasons
 
@@ -1062,7 +1219,8 @@ def score_product_for_pet(product: dict, pet_profile: dict) -> tuple[float, List
 # ----------------------------------------------
 
 @app.get("/api/recommendations/{pet_id}")
-async def get_recommendations(pet_id: str):
+@limiter.limit("20/minute")
+async def get_recommendations(request: Request, pet_id: str):
     """
     Get personalized dog food recommendations for a specific pet.
 
@@ -1099,6 +1257,7 @@ async def get_recommendations(pet_id: str):
 
         # Build pet profile dict for scoring functions
         pet_profile = {
+            "name": pet.get("name", "your dog"),
             "ageGroup": pet.get("ageGroup", "adult"),
             "breedSize": pet.get("breedSize", "medium"),
             "activityLevel": pet.get("activityLevel", "medium"),
@@ -1133,10 +1292,22 @@ async def get_recommendations(pet_id: str):
                 "message": "No products found matching basic criteria"
             }
 
-        # Step 3: Score each product using our scoring algorithm
+        # Step 3: Compute price percentiles for percentile-based scoring
+        prices = sorted([p.get("price_per_kg") for p in all_products
+                         if p.get("price_per_kg") and p["price_per_kg"] > 0])
+        if prices:
+            price_percentiles = {
+                "p25": prices[len(prices) // 4],
+                "p50": prices[len(prices) // 2],
+                "p75": prices[3 * len(prices) // 4],
+            }
+        else:
+            price_percentiles = None
+
+        # Step 4: Score each product using our scoring algorithm
         scored_products = []
         for product in all_products:
-            score, reasons = score_product_for_pet(product, pet_profile)
+            score, reasons = score_product_for_pet(product, pet_profile, price_percentiles)
 
             # Only include products with score >= 50 (decent match)
             if score >= 50:
@@ -1144,10 +1315,11 @@ async def get_recommendations(pet_id: str):
                     "product": product_helper(product),
                     "score": round(score, 1),           # Round to 1 decimal
                     "match_percentage": int(score),      # Integer for display
-                    "reasons": reasons[:3]               # Show top 3 reasons only
+                    "reasons": reasons[:3],              # Show top 3 reasons only
+                    "allergy_safe": True,                # Always True — disqualified products get score 0
                 })
 
-        # Step 4: Sort by score (highest first) and limit to top 15
+        # Step 5: Sort by score (highest first) and limit to top 15
         # lambda x: x["score"] means "sort by the 'score' field"
         # reverse=True means descending order (highest first)
         scored_products.sort(key=lambda x: x["score"], reverse=True)
@@ -1162,62 +1334,18 @@ async def get_recommendations(pet_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating recommendations: {str(e)}")
-
-
-# ============================================
-# Application Lifecycle Events
-# ============================================
-
-# FastAPI provides hooks for startup/shutdown events.
-# Use these to initialize resources (DB connections, caches) on startup
-# and clean them up (close connections) on shutdown.
-
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    Runs automatically when the server starts.
-
-    Use for:
-    - Database connection verification
-    - Cache warming
-    - Logging startup info
-    """
-    print("Pet AI Assistant API starting up...")
-    print(f"Connected to MongoDB: {MONGODB_URL}")
-    print(f"Database: {DATABASE_NAME}")
-    print("Ready to accept requests!")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """
-    Runs automatically when the server stops.
-
-    Use for:
-    - Closing database connections
-    - Flushing caches
-    - Cleanup tasks
-    """
-    print("Shutting down Pet AI Assistant API...")
-    client.close()  # Close MongoDB connection properly
-    print("MongoDB connection closed")
+        logger.error("Error generating recommendations for pet %s: %s", pet_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate recommendations")
 
 
 # ============================================
 # How to Run This Server
 # ============================================
-# Command: uvicorn main:app --reload --port 8080
-#
-# Breakdown:
-#   uvicorn     = ASGI server (runs async Python web apps)
-#   main        = this file (main.py)
-#   app         = the FastAPI instance (line 25)
-#   --reload    = auto-restart when code changes (dev only!)
-#   --port 8080 = listen on port 8080
+# Dev:  uvicorn main:app --reload --port 8000
+# Prod: uvicorn main:app --host 0.0.0.0 --port $PORT
 #
 # After running, visit:
-#   http://localhost:8080/docs  → Interactive API documentation
-#   http://localhost:8080/      → Health check endpoint
+#   http://localhost:8000/docs   → Interactive API documentation
+#   http://localhost:8000/       → Root endpoint
+#   http://localhost:8000/health → Health check
 # ============================================

@@ -9,7 +9,7 @@ import {
   poundsFromKg,
 } from '../utils/foodUtils';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null;

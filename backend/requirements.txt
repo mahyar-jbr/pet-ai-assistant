@@ -12,6 +12,9 @@ pymongo==4.6.1
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
+# Rate Limiting
+slowapi==0.1.9
+
 # Environment Variables
 python-dotenv==1.0.0
 

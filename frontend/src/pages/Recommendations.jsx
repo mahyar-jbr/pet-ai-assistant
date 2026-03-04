@@ -1,10 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FoodCard from '../components/FoodCard';
 import ComparisonTool from '../components/ComparisonTool';
 import { getRecommendations, transformRecommendation } from '../api/petApi';
 import { formatCompareLabel } from '../utils/foodUtils';
 import '../styles/recommendation.css';
+
+const PRICE_RANGES = [
+  { label: 'All Prices', min: 0, max: Infinity },
+  { label: 'Under $30', min: 0, max: 30 },
+  { label: '$30 – $60', min: 30, max: 60 },
+  { label: '$60 – $90', min: 60, max: 90 },
+  { label: '$90+', min: 90, max: Infinity },
+];
 
 const Recommendations = () => {
   const navigate = useNavigate();
@@ -16,34 +24,65 @@ const Recommendations = () => {
   const [sortOption, setSortOption] = useState('default');
   const [compareState, setCompareState] = useState({ isOpen: false, primary: '', secondary: '' });
 
+  // Filter state
+  const [selectedBrands, setSelectedBrands] = useState(new Set());
+  const [priceRangeIndex, setPriceRangeIndex] = useState(0);
+
+  // Derive available brands from loaded foods
+  const availableBrands = useMemo(() => {
+    const brands = [...new Set(foods.map((f) => f.brand).filter(Boolean))].sort();
+    return brands;
+  }, [foods]);
+
+  // Check if any filter is active
+  const hasActiveFilters = selectedBrands.size > 0 || priceRangeIndex > 0;
+
+  // Apply filters then sort
   const displayFoods = useMemo(() => {
-    if (sortOption === 'default') return foods;
-    const list = [...foods];
+    let list = foods;
+
+    // Brand filter
+    if (selectedBrands.size > 0) {
+      list = list.filter((food) => selectedBrands.has(food.brand));
+    }
+
+    // Price range filter
+    const range = PRICE_RANGES[priceRangeIndex];
+    if (range && priceRangeIndex > 0) {
+      list = list.filter((food) => {
+        if (!Number.isFinite(food.price)) return false;
+        return food.price >= range.min && food.price < range.max;
+      });
+    }
+
+    // Sort
+    if (sortOption === 'default') return list;
+    const sorted = [...list];
 
     switch (sortOption) {
       case 'price-low':
-        list.sort((a, b) => {
+        sorted.sort((a, b) => {
           const priceA = Number.isFinite(a.price) ? a.price : Infinity;
           const priceB = Number.isFinite(b.price) ? b.price : Infinity;
           return priceA - priceB;
         });
         break;
       case 'price-high':
-        list.sort((a, b) => {
+        sorted.sort((a, b) => {
           const priceA = Number.isFinite(a.price) ? a.price : -Infinity;
           const priceB = Number.isFinite(b.price) ? b.price : -Infinity;
           return priceB - priceA;
         });
         break;
       case 'protein-high':
-        list.sort((a, b) => {
+        sorted.sort((a, b) => {
           const proteinA = Number.isFinite(a.protein) ? a.protein : -Infinity;
           const proteinB = Number.isFinite(b.protein) ? b.protein : -Infinity;
           return proteinB - proteinA;
         });
         break;
       case 'fat-low':
-        list.sort((a, b) => {
+        sorted.sort((a, b) => {
           const fatA = Number.isFinite(a.fat) ? a.fat : Infinity;
           const fatB = Number.isFinite(b.fat) ? b.fat : Infinity;
           return fatA - fatB;
@@ -53,8 +92,8 @@ const Recommendations = () => {
         break;
     }
 
-    return list;
-  }, [foods, sortOption]);
+    return sorted;
+  }, [foods, sortOption, selectedBrands, priceRangeIndex]);
 
   const resultsLabel = useMemo(() => {
     const count = displayFoods.length;
@@ -197,22 +236,79 @@ const Recommendations = () => {
     setSortOption(event.target.value);
   };
 
-  const handleResetSort = () => {
+  const handleResetAll = useCallback(() => {
     setSortOption('default');
-  };
+    setSelectedBrands(new Set());
+    setPriceRangeIndex(0);
+  }, []);
+
+  const toggleBrand = useCallback((brand) => {
+    setSelectedBrands((prev) => {
+      const next = new Set(prev);
+      if (next.has(brand)) next.delete(brand);
+      else next.add(brand);
+      return next;
+    });
+  }, []);
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="loading">Loading recommendations...</div>
+      <div className="skeleton-page">
+        {/* Skeleton profile card */}
+        <div className="skeleton-profile">
+          <div className="skeleton-avatar skeleton-pulse" />
+          <div className="skeleton-profile-details">
+            <div className="skeleton-line skeleton-pulse" style={{ width: '40%', height: 24 }} />
+            <div className="skeleton-info-grid">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="skeleton-info-item skeleton-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton controls bar */}
+        <div className="skeleton-controls skeleton-pulse" />
+
+        {/* Skeleton food cards */}
+        <div className="skeleton-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton-card-top">
+                <div className="skeleton-thumb skeleton-pulse" />
+                <div className="skeleton-card-content">
+                  <div className="skeleton-line skeleton-pulse" style={{ width: '30%', height: 12 }} />
+                  <div className="skeleton-line skeleton-pulse" style={{ width: '80%', height: 18 }} />
+                  <div className="skeleton-line skeleton-pulse" style={{ width: '25%', height: 14 }} />
+                  <div className="skeleton-badges">
+                    <div className="skeleton-badge skeleton-pulse" />
+                    <div className="skeleton-badge skeleton-pulse" />
+                    <div className="skeleton-badge skeleton-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container">
-        <div className="error">{error}</div>
+      <div className="error-page">
+        <div className="error-card">
+          <svg className="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <h3>Something went wrong</h3>
+          <p>{error}</p>
+          <button className="error-retry-btn" onClick={() => window.location.reload()}>
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -281,8 +377,16 @@ const Recommendations = () => {
 
       {/* Food Recommendations */}
       <section className="food-recommendations">
-        <h3>Recommended Dry Food Options</h3>
+        <h3>{petData?.name ? `${petData.name}'s Top Food Matches` : 'Top Food Matches'}</h3>
+        <p className="recommendations-subtitle">
+          {sortOption === 'default'
+            ? `Sorted by best match${petData?.name ? ` for ${petData.name}` : ''}`
+            : null
+          }
+          <span className="dry-food-notice">Dry food only</span>
+        </p>
 
+        {/* Controls bar: sort + results count + reset */}
         <div className="controls-bar">
           <div className="controls-group">
             <label className="controls-label" htmlFor="sort-select">
@@ -303,22 +407,63 @@ const Recommendations = () => {
           </div>
           <div className="controls-group">
             <span className="results-count">{resultsLabel}</span>
-            {sortOption !== 'default' && (
+            {(sortOption !== 'default' || hasActiveFilters) && (
               <button
                 type="button"
                 id="clear-filters-btn"
                 className="clear-filters-btn"
-                onClick={handleResetSort}
+                onClick={handleResetAll}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
-                Reset
+                Reset All
               </button>
             )}
           </div>
         </div>
+
+        {/* Filter bar: brand pills + price range */}
+        {foods.length > 0 && (
+          <div className="filter-bar">
+            {/* Brand filter */}
+            {availableBrands.length > 1 && (
+              <div className="filter-section">
+                <span className="filter-section-label">Brand:</span>
+                <div className="filter-pills">
+                  {availableBrands.map((brand) => (
+                    <button
+                      key={brand}
+                      type="button"
+                      className={`filter-pill ${selectedBrands.has(brand) ? 'active' : ''}`}
+                      onClick={() => toggleBrand(brand)}
+                    >
+                      {brand}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Price range filter */}
+            <div className="filter-section">
+              <span className="filter-section-label">Price:</span>
+              <div className="filter-pills">
+                {PRICE_RANGES.map((range, idx) => (
+                  <button
+                    key={range.label}
+                    type="button"
+                    className={`filter-pill ${priceRangeIndex === idx ? 'active' : ''}`}
+                    onClick={() => setPriceRangeIndex(idx === priceRangeIndex ? 0 : idx)}
+                  >
+                    {range.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="food-section">
           <div className="food-grid">
@@ -335,8 +480,38 @@ const Recommendations = () => {
           </div>
 
           {displayFoods.length === 0 && (
-            <div className="no-results">
-              <p>No recommendations found. Try adjusting your pet's profile.</p>
+            <div className="empty-state">
+              <svg className="empty-state-icon" viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="56" stroke="#cbd5e0" strokeWidth="2" strokeDasharray="6 4" />
+                <ellipse cx="60" cy="78" rx="16" ry="13" fill="#e2e8f0" />
+                <circle cx="44" cy="50" r="7" fill="#e2e8f0" />
+                <circle cx="76" cy="50" r="7" fill="#e2e8f0" />
+                <circle cx="32" cy="64" r="6" fill="#e2e8f0" />
+                <circle cx="88" cy="64" r="6" fill="#e2e8f0" />
+                <line x1="50" y1="40" x2="70" y2="40" stroke="#cbd5e0" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <h4 className="empty-state-title">No matches found</h4>
+              <p className="empty-state-text">
+                We couldn't find any foods that match {petData?.name ? `${petData.name}'s` : "your pet's"} profile.
+              </p>
+              <ul className="empty-state-suggestions">
+                {hasActiveFilters && (
+                  <li>
+                    <button type="button" className="empty-state-link" onClick={handleResetAll}>
+                      Clear your active filters
+                    </button>
+                    {' '}to see all recommendations
+                  </li>
+                )}
+                {petData?.allergies?.length > 0 && (
+                  <li>Remove some allergies — you have {petData.allergies.length} listed</li>
+                )}
+                <li>Try a different dietary goal (e.g. Maintenance instead of {formatGoal(petData?.weightGoal)})</li>
+                <li>Change breed size if your dog is between size categories</li>
+              </ul>
+              <button className="empty-state-btn" onClick={() => navigate('/')}>
+                Edit Profile
+              </button>
             </div>
           )}
         </div>
@@ -350,6 +525,7 @@ const Recommendations = () => {
         onOpen={() => openCompareModal()}
         onClose={closeCompareModal}
         onSelectChange={updateCompareSelection}
+        petName={petData?.name || ''}
       />
     </>
   );

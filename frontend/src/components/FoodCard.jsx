@@ -245,6 +245,52 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
             </div>
           )}
 
+          {/* Allergy Safe badge — shown when pet has allergies and this food passed */}
+          {profile?.allergies?.length > 0 && (
+            <span className="allergy-safe-badge">
+              <svg className="allergy-safe-icon" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1z" fill="#dcfce7" stroke="#16a34a" strokeWidth="1.2" />
+                <path d="M5.5 8l2 2 3.5-3.5" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Allergy Safe
+            </span>
+          )}
+
+          {food.matchReasons && food.matchReasons.length > 0 && (
+            <div className="match-reasons">
+              {food.matchReasons.slice(0, 3).map((reason, i) => (
+                <span key={i} className="match-reason">
+                  <svg className="match-reason-icon" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M5.5 8l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {reason}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Shop button — visible without expanding */}
+          {food.url && (
+            <a
+              className="shop-btn"
+              href={food.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg className="shop-btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 1l-1 3h11l-1.5 7H5.5L4 4" />
+                <circle cx="6" cy="13" r="1" />
+                <circle cx="12" cy="13" r="1" />
+              </svg>
+              Shop
+              <svg className="shop-btn-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 8h8M9 5l3 3-3 3" />
+              </svg>
+            </a>
+          )}
+
           <div className="badges">
             {(tagDisplay.primary || []).map((tag) => (
               <span key={tag} className="badge badge-accent">

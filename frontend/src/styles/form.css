@@ -81,6 +81,34 @@ body {
   border-radius: 24px 24px 0 0;
 }
 
+/* Onboarding banner */
+.onboarding-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(0, 87, 255, 0.08) 0%, rgba(0, 87, 255, 0.03) 100%);
+  border: 1.5px solid rgba(0, 87, 255, 0.15);
+  margin-bottom: 24px;
+}
+
+.onboarding-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--button-bg);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.onboarding-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--text-color);
+}
+
 /* Typography */
 h1 {
   font-size: 28px;
@@ -563,4 +591,666 @@ input[type="number"]::-webkit-inner-spin-button {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ============================
+   WIZARD STYLES
+   ============================ */
+
+/* Wizard card — wider for option cards */
+.wizard-card {
+  max-width: 580px;
+  width: 100%;
+}
+
+/* ─── Progress bar ─── */
+.wizard-progress {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wizard-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(0, 87, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--button-bg) 0%, #0041cc 100%);
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wizard-progress-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--button-bg);
+  white-space: nowrap;
+}
+
+/* ─── Step transitions ─── */
+.wizard-step {
+  animation: wizardFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes wizardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wizard-backward {
+  animation: wizardFadeInBack 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes wizardFadeInBack {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ─── Step content ─── */
+.wizard-step-content {
+  min-height: 200px;
+}
+
+.wizard-question {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 8px;
+  display: block;
+}
+
+/* Override h1::before for wizard questions (they're h2) */
+.wizard-question::before {
+  display: none;
+}
+
+.wizard-hint {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+/* ─── Name input (step 1) ─── */
+.wizard-name-input {
+  width: 100%;
+  height: 56px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  background: #fff;
+  margin-bottom: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wizard-name-input::placeholder {
+  color: #aaa;
+  font-weight: 400;
+}
+
+.wizard-name-input:focus {
+  outline: none;
+  border-color: var(--button-bg);
+  box-shadow: 0 0 0 4px rgba(0, 87, 255, 0.12), 0 4px 12px rgba(0, 87, 255, 0.15);
+  background-color: #f5faff;
+}
+
+/* ─── Trust signals (step 1) ─── */
+.wizard-trust-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.trust-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2d6a4f;
+}
+
+.trust-icon {
+  width: 16px;
+  height: 16px;
+  color: #2d6a4f;
+  flex-shrink: 0;
+}
+
+/* ─── How it works (step 1) ─── */
+.wizard-how-it-works {
+  background: rgba(0, 87, 255, 0.04);
+  border: 1.5px solid rgba(0, 87, 255, 0.1);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.how-it-works-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.how-it-works-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.how-it-works-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.how-step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--button-bg);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.how-it-works-step p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-color);
+  line-height: 1.4;
+}
+
+/* ─── Option cards (steps 2–5) ─── */
+.wizard-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wizard-option-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 2px solid rgba(0, 87, 255, 0.12);
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.wizard-option-card:hover {
+  border-color: rgba(0, 87, 255, 0.3);
+  background: #fafcff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.12);
+}
+
+.wizard-option-card.selected {
+  border-color: var(--button-bg);
+  background: linear-gradient(135deg, rgba(0, 87, 255, 0.06) 0%, rgba(0, 87, 255, 0.02) 100%);
+  box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.15);
+}
+
+.wizard-option-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.wizard-option-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-color);
+  display: block;
+}
+
+.wizard-option-desc {
+  font-size: 13px;
+  color: #666;
+  font-weight: 400;
+}
+
+/* Stack label + desc vertically */
+.wizard-option-card {
+  flex-wrap: wrap;
+}
+
+.wizard-option-card .wizard-option-label,
+.wizard-option-card .wizard-option-desc {
+  flex-basis: auto;
+}
+
+/* Better layout: icon left, text stacked right */
+.wizard-option-card {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 2px;
+}
+
+.wizard-option-icon {
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
+.wizard-option-label {
+  grid-column: 2;
+}
+
+.wizard-option-desc {
+  grid-column: 2;
+}
+
+/* ─── Allergen chips (step 6) ─── */
+.wizard-allergen-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.allergen-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: inherit;
+  text-transform: capitalize;
+}
+
+.allergen-chip:hover {
+  border-color: rgba(0, 87, 255, 0.3);
+  background: #fafcff;
+}
+
+.allergen-chip.active {
+  border-color: #d32f2f;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.allergen-check {
+  width: 16px;
+  height: 16px;
+  color: #d32f2f;
+}
+
+/* Custom allergy input row */
+.wizard-custom-allergy {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.wizard-custom-allergy input {
+  flex: 1;
+  margin-bottom: 0;
+  height: 46px;
+  font-size: 14px;
+}
+
+.add-allergy-btn {
+  padding: 0 20px;
+  height: 46px;
+  border-radius: 14px;
+  border: 2px solid var(--button-bg);
+  background: #fff;
+  color: var(--button-bg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.add-allergy-btn:hover:not(:disabled) {
+  background: var(--button-bg);
+  color: #fff;
+}
+
+.add-allergy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Custom allergy pills below input */
+.wizard-custom-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* ─── Review card (step 7) ─── */
+.wizard-review-card {
+  background: linear-gradient(135deg, rgba(0, 87, 255, 0.04) 0%, rgba(0, 87, 255, 0.01) 100%);
+  border: 1.5px solid rgba(0, 87, 255, 0.12);
+  border-radius: 16px;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+.review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(0, 87, 255, 0.06);
+}
+
+.review-row:last-child {
+  border-bottom: none;
+}
+
+.review-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+}
+
+.review-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+  text-transform: capitalize;
+}
+
+/* ─── Navigation buttons ─── */
+.wizard-nav {
+  display: flex;
+  align-items: center;
+  margin-top: 28px;
+  gap: 12px;
+}
+
+.wizard-nav-spacer {
+  flex: 1;
+}
+
+.wizard-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  background: #fff;
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.wizard-back-btn:hover {
+  border-color: rgba(0, 87, 255, 0.3);
+  background: #fafcff;
+}
+
+.wizard-back-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.wizard-next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--button-bg) 0%, #0041cc 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 4px 12px rgba(0, 87, 255, 0.25);
+  font-family: inherit;
+}
+
+.wizard-next-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0041cc 0%, #003399 100%);
+  box-shadow: 0 6px 20px rgba(0, 87, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.wizard-next-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.wizard-next-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Submit button (step 7) */
+.wizard-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, var(--button-bg) 0%, #0041cc 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.3);
+  font-family: inherit;
+}
+
+.wizard-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0041cc 0%, #003399 100%);
+  box-shadow: 0 6px 24px rgba(0, 87, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.wizard-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.wizard-submit-btn.loading {
+  pointer-events: none;
+}
+
+/* Time notice on step 1 */
+.wizard-time-notice {
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+/* ─── Wizard responsive ─── */
+@media (max-width: 600px) {
+  .wizard-card {
+    padding: 32px 22px;
+  }
+
+  .wizard-question {
+    font-size: 20px;
+  }
+
+  .wizard-name-input {
+    font-size: 16px;
+    height: 52px;
+  }
+
+  .wizard-trust-signals {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .wizard-option-card {
+    padding: 14px 16px;
+  }
+
+  .wizard-option-icon {
+    font-size: 24px;
+    width: 32px;
+  }
+
+  .wizard-option-card {
+    grid-template-columns: 32px 1fr;
+  }
+
+  .wizard-option-label {
+    font-size: 15px;
+  }
+
+  .wizard-allergen-chips {
+    gap: 8px;
+  }
+
+  .allergen-chip {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .wizard-next-btn,
+  .wizard-back-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .wizard-submit-btn {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+
+  .review-row {
+    padding: 12px 18px;
+  }
+}
+
+@media (max-width: 400px) {
+  .wizard-card {
+    padding: 24px 16px;
+  }
+
+  .how-it-works-steps {
+    gap: 10px;
+  }
+
+  .how-step-number {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+}
+
+/* ─── Inline error banner ─── */
+.wizard-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  margin-top: 20px;
+  animation: wizardFadeIn 0.3s ease;
+}
+
+.wizard-error-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.wizard-error-text {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #991b1b;
+  line-height: 1.4;
+}
+
+.wizard-error-dismiss {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: opacity 0.2s ease;
+}
+
+.wizard-error-dismiss:hover {
+  opacity: 0.7;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .wizard-step {
+    animation: none;
+  }
+
+  .wizard-backward {
+    animation: none;
+  }
+
+  .wizard-progress-fill {
+    transition: none;
+  }
+
+  .wizard-option-card {
+    transition: none;
+  }
 }

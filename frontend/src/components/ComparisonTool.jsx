@@ -9,6 +9,7 @@ const ComparisonTool = ({
   onOpen,
   onClose,
   onSelectChange,
+  petName = '',
 }) => {
   const dialogRef = useRef(null);
   const badgeCount = useMemo(() => {
@@ -90,7 +91,6 @@ const ComparisonTool = ({
         aria-expanded={isOpen}
         onClick={handleToggle}
       >
-        <span className="sr-only">Compare Foods</span>
         <svg
           className="compare-icon"
           viewBox="0 0 24 24"
@@ -104,6 +104,7 @@ const ComparisonTool = ({
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
+        <span className="compare-label">Compare</span>
         <span className={`compare-badge ${badgeCount > 0 ? 'active' : ''}`} id="compare-count">
           {badgeCount}
         </span>
@@ -135,7 +136,7 @@ const ComparisonTool = ({
               </div>
               <div>
                 <p className="compare-eyebrow">Side-by-side comparison</p>
-                <h3 id="compare-title">Which food is better for your pet?</h3>
+                <h3 id="compare-title">Which food is better for {petName || 'your pet'}?</h3>
               </div>
             </div>
             <button
