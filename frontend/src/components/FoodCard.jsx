@@ -1,9 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { fmtMoney } from '../utils/foodUtils';
-import { calculateFeeding } from '../utils/feedingCalculator';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/220?text=Dog+Food';
-const LB_TO_KG = 0.453592;
 
 const formatFullPriceLine = (price, bagLb, unitPrice) => {
   const parts = [];
@@ -18,13 +16,6 @@ const formatFullPriceLine = (price, bagLb, unitPrice) => {
   }
   return line;
 };
-
-const formatBadge = (value) => {
-  if (!value) return '';
-  return value.replace(/-/g, ' ');
-};
-
-const barWidth = (value, max) => `${Math.min((value / max) * 100, 100)}%`;
 
 const loadFavorites = () => {
   try {
@@ -43,11 +34,8 @@ const persistFavorites = (favorites) => {
   }
 };
 
-const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
-  const detailRef = useRef(null);
+const FoodCard = ({ food, profile, onSelect, onCompare }) => {
   const [favorites, setFavorites] = useState(() => loadFavorites());
-  const [weightLbs, setWeightLbs] = useState('');
-  const [weightError, setWeightError] = useState('');
 
   const imgSrc = food.image || PLACEHOLDER_IMG;
   const title = food.detail?.name || food.line || food.id || 'Unknown Product';
@@ -58,84 +46,19 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
   );
 
   const isFavorite = favorites.includes(food.compareId);
-
-  // Feeding calculator results
-  const feedingResults = useMemo(() => {
-    const lbs = parseFloat(weightLbs);
-    if (!Number.isFinite(lbs) || lbs <= 0) return null;
-    return calculateFeeding({
-      weightKg: lbs * LB_TO_KG,
-      activityLevel: profile?.activityLevel || 'medium',
-      weightGoal: profile?.weightGoal || 'maintenance',
-      kcalPerCup: food.kcalPerCup,
-      kcalPerKg: food.kcalPerKg,
-      sizeKg: food.sizeKg,
-      pricePerKg: food.pricePerKg,
-    });
-  }, [weightLbs, profile?.activityLevel, profile?.weightGoal, food.kcalPerCup, food.kcalPerKg, food.sizeKg, food.pricePerKg]);
-
-  // Auto-scroll expanded card into view after animation
-  useEffect(() => {
-    if (isActive && detailRef.current) {
-      const timer = setTimeout(() => {
-        const card = detailRef.current.closest('.food-card');
-        if (card) {
-          const rect = card.getBoundingClientRect();
-          if (rect.top < 0 || rect.top > window.innerHeight * 0.3) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [isActive]);
-
-  useEffect(() => {
-    const panel = detailRef.current;
-    if (!panel) return;
-
-    if (isActive) {
-      panel.hidden = false;
-      panel.style.overflow = 'hidden';
-      panel.style.maxHeight = '0px';
-      requestAnimationFrame(() => {
-        panel.style.maxHeight = `${panel.scrollHeight}px`;
-      });
-      const handle = (event) => {
-        if (event.propertyName === 'max-height') {
-          panel.style.maxHeight = 'none';
-          panel.style.overflow = 'visible';
-        }
-      };
-      panel.addEventListener('transitionend', handle, { once: true });
-    } else {
-      if (panel.hidden) return;
-      panel.style.overflow = 'hidden';
-      panel.style.maxHeight = `${panel.scrollHeight}px`;
-      requestAnimationFrame(() => {
-        panel.style.maxHeight = '0px';
-      });
-      const handle = (event) => {
-        if (event.propertyName === 'max-height') {
-          panel.hidden = true;
-          panel.style.maxHeight = '';
-          panel.style.overflow = '';
-        }
-      };
-      panel.addEventListener('transitionend', handle, { once: true });
-    }
-  }, [isActive]);
+  const isPlantBased = (food.primaryProteins || '').toLowerCase().includes('plant-based') ||
+    (food.line || '').toLowerCase().includes('kind earth');
 
   const handleCardClick = (event) => {
-    if (event.target.closest('a, button, input')) return;
-    onToggle(food.compareId);
+    if (event.target.closest('a, button')) return;
+    onSelect(food.compareId);
   };
 
   const handleKeyDown = (event) => {
-    if (event.target.closest('a, button, input')) return;
+    if (event.target.closest('a, button')) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onToggle(food.compareId);
+      onSelect(food.compareId);
     }
   };
 
@@ -153,20 +76,14 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
     onCompare(food);
   };
 
-  const detailAnalysis = food.detail?.analysis || [];
-  const detailFeeding = food.detail?.feeding || [];
-  const detailIngredients = food.detail?.ingredients || '';
-  const tagListForDetail = (food.tags || []).map(formatBadge);
-
   return (
     <div
-      className={`food-card better-card ${isActive ? 'expanded' : ''}`}
+      className="food-card better-card"
       data-tags={(food.tags || []).join(', ')}
       data-food-id={food.compareId}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       role="button"
-      aria-expanded={isActive}
       tabIndex={0}
     >
       {/* Quick actions: top-right, icon-only, subtle */}
@@ -232,6 +149,14 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
                     <path d="M8 1l2.18 4.41L15 6.11l-3.5 3.41.83 4.82L8 12.01l-4.33 2.33.83-4.82L1 6.11l4.82-.7L8 1z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="0.8" />
                   </svg>
                   {food.matchScore}
+                  <span className="score-info-trigger" tabIndex={0} role="button" aria-label="What is Match Score?" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <circle cx="8" cy="8" r="7" />
+                      <line x1="8" y1="7" x2="8" y2="11.5" strokeLinecap="round" />
+                      <circle cx="8" cy="4.75" r="0.5" fill="currentColor" stroke="none" />
+                    </svg>
+                    <span className="score-info-tooltip">Match Score reflects how well this food fits your dog's breed, age, activity level, dietary goals, and nutritional needs. Scored out of 100.</span>
+                  </span>
                 </span>
               )}
               {profile?.allergies?.length > 0 && (
@@ -258,6 +183,18 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
                   {reason}
                 </span>
               ))}
+            </div>
+          )}
+
+          {/* Plant-based disclaimer */}
+          {isPlantBased && (
+            <div className="card-section card-plant-disclaimer">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="8" r="7" />
+                <line x1="8" y1="5" x2="8" y2="9" />
+                <circle cx="8" cy="11.5" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
+              Plant-based diet — consult your veterinarian before feeding.
             </div>
           )}
 
@@ -290,207 +227,6 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
               </a>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* === EXPAND PANEL: 3 color-coded zones === */}
-      <div className="detail-panel" hidden={!isActive} ref={detailRef}>
-        <div className="detail-shell">
-
-          {/* ZONE 1: Nutrition (blue accent) */}
-          <div className="detail-zone detail-zone-nutrition">
-            {(Number.isFinite(food.protein) || Number.isFinite(food.fat) || Number.isFinite(food.fiber)) && (
-              <>
-                <h4>Nutrition</h4>
-                <div className="nutrition-bars">
-                  {Number.isFinite(food.protein) && (
-                    <div className="nutrition-bar-row">
-                      <span className="nutrition-bar-label">Protein</span>
-                      <div className="nutrition-bar-track">
-                        <div className="nutrition-bar-fill protein" style={{ width: barWidth(food.protein, 45) }} />
-                      </div>
-                      <span className="nutrition-bar-value">{food.protein}%</span>
-                    </div>
-                  )}
-                  {Number.isFinite(food.fat) && (
-                    <div className="nutrition-bar-row">
-                      <span className="nutrition-bar-label">Fat</span>
-                      <div className="nutrition-bar-track">
-                        <div className="nutrition-bar-fill fat" style={{ width: barWidth(food.fat, 25) }} />
-                      </div>
-                      <span className="nutrition-bar-value">{food.fat}%</span>
-                    </div>
-                  )}
-                  {Number.isFinite(food.fiber) && (
-                    <div className="nutrition-bar-row">
-                      <span className="nutrition-bar-label">Fiber</span>
-                      <div className="nutrition-bar-track">
-                        <div className="nutrition-bar-fill fiber" style={{ width: barWidth(food.fiber, 10) }} />
-                      </div>
-                      <span className="nutrition-bar-value">{food.fiber}%</span>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {food.matchReasons && food.matchReasons.length > 2 && (
-              <div className="detail-more-reasons">
-                <h4>More Reasons</h4>
-                {food.matchReasons.slice(2).map((reason, i) => (
-                  <span key={i} className="match-reason">
-                    <svg className="match-reason-icon" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                      <path d="M5.5 8l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    {reason}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className="detail-tables">
-              <div className="detail-table-block">
-                <h4>Guaranteed Analysis</h4>
-                <ul className="detail-list">
-                  {detailAnalysis.length > 0 ? (
-                    detailAnalysis.map((item) => (
-                      <li key={`${item.label}-${item.value}`} className={item.value ? 'has-value' : 'detail-list-empty'}>
-                        <span>{item.label}</span>
-                        <span>{item.value}</span>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="detail-list-empty">No guaranteed analysis provided.</li>
-                  )}
-                </ul>
-              </div>
-
-              {detailFeeding.length > 0 && (
-                <div className="detail-table-block">
-                  <h4>Feeding Facts</h4>
-                  <ul className="detail-list">
-                    {detailFeeding.map((item) => (
-                      <li key={`${item.label}-${item.value}`} className={item.value ? 'has-value' : 'detail-list-empty'}>
-                        <span>{item.label}</span>
-                        <span>{item.value}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ZONE 2: Ingredients (green accent) */}
-          {(detailIngredients || tagListForDetail.length > 0) && (
-            <div className="detail-zone detail-zone-ingredients">
-              {detailIngredients && (
-                <>
-                  <h4>Ingredients</h4>
-                  <p className="detail-ingredients-text">{detailIngredients}</p>
-                </>
-              )}
-              {tagListForDetail.length > 0 && (
-                <>
-                  <h4>Key Attributes</h4>
-                  <div className="detail-tag-list">
-                    {tagListForDetail.map((tag) => (
-                      <span key={tag} className="detail-tag">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ZONE 3: Calculator (amber accent) */}
-          {Number.isFinite(food.kcalPerCup) && (
-            <div className="detail-zone detail-zone-calculator">
-              <h4>Feeding Calculator</h4>
-              <div className="feeding-calc-input">
-                <label htmlFor={`weight-${food.compareId}`}>
-                  Your dog's weight (lbs):
-                </label>
-                <input
-                  id={`weight-${food.compareId}`}
-                  type="number"
-                  min="1"
-                  max="300"
-                  step="1"
-                  placeholder="e.g. 50"
-                  value={weightLbs}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setWeightLbs(val);
-                    if (val && (!Number.isFinite(parseFloat(val)) || parseFloat(val) <= 0)) {
-                      setWeightError('Enter a valid weight (e.g. 50)');
-                    } else {
-                      setWeightError('');
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className={`feeding-weight-input${weightError ? ' input-error' : ''}`}
-                />
-                {weightError && <span className="feeding-weight-error">{weightError}</span>}
-              </div>
-
-              {feedingResults ? (
-                <div className="feeding-results">
-                  <div className="feeding-result-grid">
-                    <div className="feeding-result-item">
-                      <span className="feeding-result-label">Daily Amount</span>
-                      <span className="feeding-result-value">{feedingResults.cupsPerDay} cups/day</span>
-                      <span className="feeding-result-sub">({feedingResults.cupsPerMeal} cups per meal, 2 meals)</span>
-                    </div>
-                    {feedingResults.costPerDay && (
-                      <div className="feeding-result-item">
-                        <span className="feeding-result-label">Estimated Cost</span>
-                        <span className="feeding-result-value">{feedingResults.costPerDay}/day</span>
-                        <span className="feeding-result-sub">{feedingResults.costPerMonth}/month</span>
-                      </div>
-                    )}
-                    {feedingResults.bagDuration && (
-                      <div className="feeding-result-item">
-                        <span className="feeding-result-label">Bag Duration</span>
-                        <span className="feeding-result-value">{feedingResults.bagDuration}</span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="feeding-disclaimer">
-                    Estimates based on your pet's profile. Always consult your veterinarian for personalized feeding advice.
-                  </p>
-                  {food.url && (
-                    <a
-                      className="shop-btn feeding-shop-btn"
-                      href={food.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <svg className="shop-btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 1l-1 3h11l-1.5 7H5.5L4 4" />
-                        <circle cx="6" cy="13" r="1" />
-                        <circle cx="12" cy="13" r="1" />
-                      </svg>
-                      Shop This Food
-                      <svg className="shop-btn-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 8h8M9 5l3 3-3 3" />
-                      </svg>
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <p className="feeding-placeholder">
-                  Enter your dog's weight above to see daily feeding amounts, estimated costs, and how long this bag will last.
-                </p>
-              )}
-            </div>
-          )}
-
         </div>
       </div>
     </div>

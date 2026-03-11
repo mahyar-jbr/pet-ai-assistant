@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPet } from '../api/petApi';
 import '../styles/form.css';
 
@@ -36,11 +36,12 @@ const COMMON_ALLERGENS = [
 
 const PetForm = () => {
   const navigate = useNavigate();
-  const autoAdvanceTimer = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState('forward'); // 'forward' | 'backward'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [toast, setToast] = useState('');
 
   // Form data
   const [name, setName] = useState('');
@@ -50,11 +51,17 @@ const PetForm = () => {
   const [weightGoal, setWeightGoal] = useState('');
   const [allergies, setAllergies] = useState([]);
   const [customAllergyInput, setCustomAllergyInput] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // Clean up auto-advance timer on unmount
+  // Show toast when redirected from recommendations
   useEffect(() => {
-    return () => clearTimeout(autoAdvanceTimer.current);
-  }, []);
+    if (searchParams.get('reason') === 'no-profile') {
+      setToast('Please create a pet profile first');
+      setSearchParams({}, { replace: true });
+      const timer = setTimeout(() => setToast(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, setSearchParams]);
 
   // Pre-populate from localStorage for Edit mode
   useEffect(() => {
@@ -69,6 +76,10 @@ const PetForm = () => {
         if (petData.weightGoal) setWeightGoal(petData.weightGoal);
         if (petData.allergies?.length > 0) {
           setAllergies(petData.allergies.map(a => a.toLowerCase()));
+        }
+        // If profile exists and has required fields, this is an edit
+        if (petData.ageGroup && localStorage.getItem('petId')) {
+          setIsEditMode(true);
         }
       } catch (error) {
         console.error('Error loading existing pet data:', error);
@@ -180,15 +191,7 @@ const PetForm = () => {
           key={opt.value}
           type="button"
           className={`wizard-option-card ${selected === opt.value ? 'selected' : ''}`}
-          onClick={() => {
-            onSelect(opt.value);
-            // Auto-advance after selection with a brief delay for visual feedback
-            clearTimeout(autoAdvanceTimer.current);
-            autoAdvanceTimer.current = setTimeout(() => {
-              setDirection('forward');
-              setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
-            }, 250);
-          }}
+          onClick={() => onSelect(opt.value)}
         >
           <span className="wizard-option-icon">{opt.icon}</span>
           <span className="wizard-option-label">{opt.label}</span>
@@ -442,6 +445,16 @@ const PetForm = () => {
           </div>
         )}
 
+        {/* Back to Results — visible in edit mode */}
+        {isEditMode && (
+          <button type="button" className="wizard-cancel-btn" onClick={() => navigate('/recommendations')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Back to Results
+          </button>
+        )}
+
         {/* Navigation buttons */}
         <div className="wizard-nav">
           {currentStep > 1 && (
@@ -482,6 +495,17 @@ const PetForm = () => {
           <p className="wizard-time-notice">Takes about 60 seconds</p>
         )}
       </div>
+      {/* Redirect toast */}
+      {toast && (
+        <div className="form-toast" role="alert">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="8" cy="8" r="7" />
+            <line x1="8" y1="5" x2="8" y2="8.5" />
+            <circle cx="8" cy="11" r="0.5" fill="currentColor" stroke="none" />
+          </svg>
+          {toast}
+        </div>
+      )}
     </div>
   );
 };

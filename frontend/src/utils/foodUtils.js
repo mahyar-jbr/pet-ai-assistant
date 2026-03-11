@@ -235,7 +235,7 @@ export function buildComparisonSections(foodA, foodB) {
   if (scoreRows.length) {
     sections.push({
       title: 'Match Score',
-      icon: '⭐',
+      icon: 'star',
       rows: scoreRows,
     });
   }
@@ -248,7 +248,7 @@ export function buildComparisonSections(foodA, foodB) {
 
   sections.push({
     title: 'Overview',
-    icon: '🏷️',
+    icon: 'tag',
     rows: [
       {
         label: 'Brand',
@@ -353,7 +353,7 @@ export function buildComparisonSections(foodA, foodB) {
   if (nutritionRows.length) {
     sections.push({
       title: 'Key Nutrition',
-      icon: '🔬',
+      icon: 'flask',
       rows: nutritionRows,
     });
   }
@@ -391,7 +391,7 @@ export function buildComparisonSections(foodA, foodB) {
   if (analysisRows.length) {
     sections.push({
       title: 'Guaranteed Analysis',
-      icon: '📋',
+      icon: 'clipboard',
       rows: analysisRows.filter(Boolean),
     });
   }
@@ -423,7 +423,7 @@ export function buildComparisonSections(foodA, foodB) {
   if (factsRows.length) {
     sections.push({
       title: 'Feeding Information',
-      icon: '📊',
+      icon: 'chart',
       rows: factsRows.filter(Boolean),
     });
   }
@@ -472,7 +472,7 @@ export function buildComparisonSections(foodA, foodB) {
   if (ingredientsRows.length) {
     sections.push({
       title: 'Ingredients & Formulation',
-      icon: '🌾',
+      icon: 'leaf',
       rows: ingredientsRows,
     });
   }

@@ -1,35 +1,66 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import FoodCard from '../components/FoodCard';
+import ProductDetail from '../components/ProductDetail';
 import ComparisonTool from '../components/ComparisonTool';
 import FilterBar from '../components/FilterBar';
 import { getRecommendations, transformRecommendation } from '../api/petApi';
 import { formatCompareLabel } from '../utils/foodUtils';
 import '../styles/recommendation.css';
 
-const PRICE_RANGES = [
-  { label: 'All Prices', min: 0, max: Infinity },
-  { label: 'Under $30', min: 0, max: 30 },
-  { label: '$30 – $60', min: 30, max: 60 },
-  { label: '$60 – $90', min: 60, max: 90 },
-  { label: '$90+', min: 90, max: Infinity },
-];
+const buildPriceRanges = (foods) => {
+  const prices = foods.map((f) => f.price).filter(Number.isFinite).sort((a, b) => a - b);
+  if (prices.length < 4) {
+    return [{ label: 'All Prices', min: 0, max: Infinity }];
+  }
+  const p25 = prices[Math.floor(prices.length * 0.25)];
+  const p50 = prices[Math.floor(prices.length * 0.5)];
+  const p75 = prices[Math.floor(prices.length * 0.75)];
+
+  const fmt = (n) => `$${Math.round(n)}`;
+
+  return [
+    { label: 'All Prices', min: 0, max: Infinity },
+    { label: `Under ${fmt(p25)}`, min: 0, max: p25 },
+    { label: `${fmt(p25)} – ${fmt(p50)}`, min: p25, max: p50 },
+    { label: `${fmt(p50)} – ${fmt(p75)}`, min: p50, max: p75 },
+    { label: `${fmt(p75)}+`, min: p75, max: Infinity },
+  ];
+};
 
 const Recommendations = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [petData, setPetData] = useState(null);
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFoodId, setActiveFoodId] = useState(null);
+  const [allergyStats, setAllergyStats] = useState(null);
   const [sortOption, setSortOption] = useState('default');
   const [compareState, setCompareState] = useState({ isOpen: false, primary: '', secondary: '' });
+
+  // Product detail overlay — driven by URL param
+  const selectedFoodId = searchParams.get('product') || null;
+
+  // Lifted weight input state (persists across product nav)
+  const [weightLbs, setWeightLbs] = useState('');
+
+  const setSelectedFoodId = useCallback((id) => {
+    if (id) {
+      setSearchParams({ product: id });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  }, [setSearchParams]);
 
   // Filter state
   const [selectedBrands, setSelectedBrands] = useState(new Set());
   const [priceRangeIndex, setPriceRangeIndex] = useState(0);
   const [selectedProteins, setSelectedProteins] = useState(new Set());
   const [grainFreeOnly, setGrainFreeOnly] = useState(false);
+
+  // Derive dynamic price ranges from loaded foods
+  const PRICE_RANGES = useMemo(() => buildPriceRanges(foods), [foods]);
 
   // Derive available brands from loaded foods
   const availableBrands = useMemo(() => {
@@ -157,12 +188,11 @@ const Recommendations = () => {
     return `${count} product${count === 1 ? '' : 's'}`;
   }, [displayFoods]);
 
-  const displayFoodIds = useMemo(() => new Set(displayFoods.map((f) => f.compareId)), [displayFoods]);
-  useEffect(() => {
-    if (activeFoodId && !displayFoodIds.has(activeFoodId)) {
-      setActiveFoodId(null);
-    }
-  }, [displayFoodIds, activeFoodId]);
+  // Find the selected food object for the overlay
+  const selectedFood = useMemo(() => {
+    if (!selectedFoodId) return null;
+    return displayFoods.find((f) => f.compareId === selectedFoodId) || null;
+  }, [selectedFoodId, displayFoods]);
 
   useEffect(() => {
     const loadRecommendations = async () => {
@@ -174,7 +204,7 @@ const Recommendations = () => {
           localStorage.removeItem('petData');
         }
         if (!storedPetData || !storedPetData.ageGroup) {
-          navigate('/');
+          navigate('/?reason=no-profile');
           return;
         }
         setPetData(storedPetData);
@@ -184,8 +214,15 @@ const Recommendations = () => {
         const recommendations = response.recommendations || [];
         const transformedFoods = recommendations.map((item, index) => transformRecommendation(item, index));
 
+        if (response.allergy_filtered > 0) {
+          setAllergyStats({
+            total: response.total_products,
+            filtered: response.allergy_filtered,
+            showing: transformedFoods.length,
+          });
+        }
+
         setFoods(transformedFoods);
-        setActiveFoodId(null);
         setLoading(false);
       } catch (err) {
         console.error('Failed to load recommendations:', err);
@@ -193,11 +230,16 @@ const Recommendations = () => {
         if (err.response?.status === 404) {
           localStorage.removeItem('petId');
           localStorage.removeItem('petData');
-          navigate('/');
+          navigate('/?reason=no-profile');
           return;
         }
 
-        setError('Unable to load recommendations. Please try again later.');
+        const isNetwork = !err.response && (err.code === 'ERR_NETWORK' || err.message === 'Network Error' || !navigator.onLine);
+        if (isNetwork) {
+          setError('Unable to connect to the server. Please check that the device is connected to the internet and try again.');
+        } else {
+          setError('Unable to load recommendations. Please try again later.');
+        }
         setLoading(false);
       }
     };
@@ -238,9 +280,17 @@ const Recommendations = () => {
     return map[goal?.toLowerCase()] || goal;
   };
 
-  const handleToggleCard = useCallback((compareId) => {
-    setActiveFoodId((prev) => (prev === compareId ? null : compareId));
-  }, []);
+  const handleSelectCard = useCallback((compareId) => {
+    setSelectedFoodId(compareId);
+  }, [setSelectedFoodId]);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedFoodId(null);
+  }, [setSelectedFoodId]);
+
+  const handleNavigateDetail = useCallback((compareId) => {
+    setSelectedFoodId(compareId);
+  }, [setSelectedFoodId]);
 
   const openCompareModal = useCallback((focusFood = null) => {
     if (!displayFoods.length) return;
@@ -269,7 +319,7 @@ const Recommendations = () => {
     setCompareState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
-  const updateCompareSelection = (next) => {
+  const updateCompareSelection = useCallback((next) => {
     setCompareState((prev) => {
       const merged = { ...prev, ...next };
       if (merged.primary && merged.secondary && merged.primary === merged.secondary) {
@@ -280,7 +330,14 @@ const Recommendations = () => {
       }
       return merged;
     });
-  };
+  }, [displayFoods]);
+
+  const handleStartOver = useCallback(() => {
+    localStorage.removeItem('petId');
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('petData');
+    navigate('/');
+  }, [navigate]);
 
   const handleResetAll = useCallback(() => {
     setSortOption('default');
@@ -384,9 +441,19 @@ const Recommendations = () => {
           </svg>
           <h3>Something went wrong</h3>
           <p>{error}</p>
-          <button className="error-retry-btn" onClick={() => window.location.reload()}>
-            Try Again
-          </button>
+          <ul className="error-troubleshoot">
+            <li>Check that the device is connected to Wi-Fi or ethernet</li>
+            <li>Try refreshing the page</li>
+            <li>If the problem persists, restart the browser</li>
+          </ul>
+          <div className="error-actions">
+            <button className="error-retry-btn" onClick={() => window.location.reload()}>
+              Try Again
+            </button>
+            <button className="error-start-over-btn" onClick={handleStartOver}>
+              Start Over
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -394,8 +461,17 @@ const Recommendations = () => {
 
   return (
     <>
-      {/* Logo */}
-      <img src="/logo.png" alt="Pet AI Assistant" className="rec-logo" />
+      {/* Logo + Start Over */}
+      <div className="rec-header">
+        <img src="/logo.png" alt="Pet AI Assistant" className="rec-logo" />
+        <button type="button" className="start-over-btn" onClick={handleStartOver}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+          Start Over
+        </button>
+      </div>
 
       {/* Pet Profile Summary */}
       <section className="pet-profile">
@@ -457,6 +533,19 @@ const Recommendations = () => {
         </div>
       </section>
 
+      {/* Brand Strip */}
+      {displayFoods.length > 0 && (
+        <div className="brand-strip">
+          <div className="brand-strip-logos">
+            <img src="/brands/orijen.png" alt="Orijen" className="brand-strip-logo" />
+            <span className="brand-strip-dot" aria-hidden="true" />
+            <img src="/brands/acana.png" alt="Acana" className="brand-strip-logo" />
+            <span className="brand-strip-dot" aria-hidden="true" />
+            <img src="/brands/open-farm.png" alt="Open Farm" className="brand-strip-logo" />
+          </div>
+        </div>
+      )}
+
       {/* Food Recommendations */}
       <section className="food-recommendations">
         <h3>{petData?.name ? `${petData.name}'s Top Food Matches` : 'Top Food Matches'}</h3>
@@ -467,6 +556,29 @@ const Recommendations = () => {
           }
           <span className="dry-food-notice">Dry food only</span>
         </p>
+
+        {/* Allergy filter notice */}
+        {allergyStats && (
+          <div className="allergy-filter-notice">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1z" />
+              <path d="M5.5 8l2 2 3.5-3.5" />
+            </svg>
+            Showing {allergyStats.showing} of {allergyStats.total} products — {allergyStats.filtered} removed due to your allergy filters
+          </div>
+        )}
+
+        {/* Low results warning */}
+        {allergyStats && allergyStats.showing > 0 && allergyStats.showing < 5 && (
+          <div className="low-results-warning">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 1.5L1 14.5h14L8 1.5z" />
+              <line x1="8" y1="6.5" x2="8" y2="10" />
+              <circle cx="8" cy="12" r="0.5" fill="currentColor" stroke="none" />
+            </svg>
+            Limited options found for {petData?.name ? `${petData.name}'s` : "your dog's"} allergy profile. We recommend consulting your veterinarian for specialized diet recommendations.
+          </div>
+        )}
 
         {/* Results count + reset */}
         <div className="controls-bar">
@@ -509,18 +621,28 @@ const Recommendations = () => {
         )}
 
         <div className="food-section">
-          <div className={`food-grid${activeFoodId ? ' has-expanded' : ''}`}>
+          <div className="food-grid">
             {displayFoods.map((food, idx) => (
               <FoodCard
                 key={food.compareId || idx}
                 food={food}
                 profile={petData}
-                isActive={activeFoodId === food.compareId}
-                onToggle={handleToggleCard}
+                onSelect={handleSelectCard}
                 onCompare={openCompareModal}
               />
             ))}
           </div>
+
+          {/* Bottom hint — points to header Start Over */}
+          {displayFoods.length > 0 && (
+            <div className="start-over-hint">
+              <p>Looking for recommendations for a different pet?{' '}
+                <button type="button" className="start-over-link" onClick={handleStartOver}>
+                  Start over
+                </button>
+              </p>
+            </div>
+          )}
 
           {displayFoods.length === 0 && (
             <div className="empty-state">
@@ -559,6 +681,20 @@ const Recommendations = () => {
           )}
         </div>
       </section>
+
+      {/* Product Detail Overlay */}
+      {selectedFood && (
+        <ProductDetail
+          food={selectedFood}
+          profile={petData}
+          foods={displayFoods}
+          onClose={handleCloseDetail}
+          onNavigate={handleNavigateDetail}
+          onCompare={openCompareModal}
+          weightLbs={weightLbs}
+          setWeightLbs={setWeightLbs}
+        />
+      )}
 
       <ComparisonTool
         foods={displayFoods}
