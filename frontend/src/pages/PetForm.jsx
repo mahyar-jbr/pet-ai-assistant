@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPet } from '../api/petApi';
 import '../styles/form.css';
@@ -36,6 +36,7 @@ const COMMON_ALLERGENS = [
 
 const PetForm = () => {
   const navigate = useNavigate();
+  const autoAdvanceTimer = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState('forward'); // 'forward' | 'backward'
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +50,11 @@ const PetForm = () => {
   const [weightGoal, setWeightGoal] = useState('');
   const [allergies, setAllergies] = useState([]);
   const [customAllergyInput, setCustomAllergyInput] = useState('');
+
+  // Clean up auto-advance timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(autoAdvanceTimer.current);
+  }, []);
 
   // Pre-populate from localStorage for Edit mode
   useEffect(() => {
@@ -177,7 +183,8 @@ const PetForm = () => {
           onClick={() => {
             onSelect(opt.value);
             // Auto-advance after selection with a brief delay for visual feedback
-            setTimeout(() => {
+            clearTimeout(autoAdvanceTimer.current);
+            autoAdvanceTimer.current = setTimeout(() => {
               setDirection('forward');
               setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
             }, 250);
@@ -396,6 +403,9 @@ const PetForm = () => {
   return (
     <div className="container">
       <div className="form-card wizard-card">
+        {/* Logo — visible on all steps */}
+        <img src="/logo.png" alt="Pet AI Assistant" className="form-logo" />
+
         {/* Progress bar */}
         <div className="wizard-progress">
           <div className="wizard-progress-bar">

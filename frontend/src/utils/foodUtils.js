@@ -103,24 +103,6 @@ export function splitTagsForDisplay(tags = [], profile = {}) {
   };
 }
 
-export function reasonsForMatch(profile = {}, tags = []) {
-  const r = [];
-  const goal = (profile?.weightGoal || '').toLowerCase();
-  if (goal === 'muscle-gain' && tags.includes('high-protein')) {
-    r.push('High-protein for conditioning');
-  }
-  if (goal === 'weight-loss' && tags.includes('low-fat')) {
-    r.push('Lower fat to aid weight control');
-  }
-  if (tags.includes('joint-support')) {
-    r.push('Supports joint health');
-  }
-  if (tags.includes('grain-free')) {
-    r.push('Grain-free formula');
-  }
-  return r.slice(0, 2);
-}
-
 export function formatProductName(food) {
   return cleanText(food.detail?.name || food.line || food.id || 'Unnamed Product');
 }

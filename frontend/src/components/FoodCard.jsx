@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { fmtMoney } from '../utils/foodUtils';
 import { calculateFeeding } from '../utils/feedingCalculator';
 
@@ -47,6 +47,7 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
   const detailRef = useRef(null);
   const [favorites, setFavorites] = useState(() => loadFavorites());
   const [weightLbs, setWeightLbs] = useState('');
+  const [weightError, setWeightError] = useState('');
 
   const imgSrc = food.image || PLACEHOLDER_IMG;
   const title = food.detail?.name || food.line || food.id || 'Unknown Product';
@@ -72,6 +73,22 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
       pricePerKg: food.pricePerKg,
     });
   }, [weightLbs, profile?.activityLevel, profile?.weightGoal, food.kcalPerCup, food.kcalPerKg, food.sizeKg, food.pricePerKg]);
+
+  // Auto-scroll expanded card into view after animation
+  useEffect(() => {
+    if (isActive && detailRef.current) {
+      const timer = setTimeout(() => {
+        const card = detailRef.current.closest('.food-card');
+        if (card) {
+          const rect = card.getBoundingClientRect();
+          if (rect.top < 0 || rect.top > window.innerHeight * 0.3) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
 
   useEffect(() => {
     const panel = detailRef.current;
@@ -405,11 +422,20 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
                   step="1"
                   placeholder="e.g. 50"
                   value={weightLbs}
-                  onChange={(e) => setWeightLbs(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setWeightLbs(val);
+                    if (val && (!Number.isFinite(parseFloat(val)) || parseFloat(val) <= 0)) {
+                      setWeightError('Enter a valid weight (e.g. 50)');
+                    } else {
+                      setWeightError('');
+                    }
+                  }}
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
-                  className="feeding-weight-input"
+                  className={`feeding-weight-input${weightError ? ' input-error' : ''}`}
                 />
+                {weightError && <span className="feeding-weight-error">{weightError}</span>}
               </div>
 
               {feedingResults ? (
@@ -471,4 +497,4 @@ const FoodCard = ({ food, profile, isActive, onToggle, onCompare }) => {
   );
 };
 
-export default FoodCard;
+export default memo(FoodCard);

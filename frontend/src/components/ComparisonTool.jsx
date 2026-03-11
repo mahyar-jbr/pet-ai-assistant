@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { buildComparisonSections, formatCompareLabel, formatProductName } from '../utils/foodUtils';
 
 const ComparisonTool = ({
@@ -12,6 +12,7 @@ const ComparisonTool = ({
   petName = '',
 }) => {
   const dialogRef = useRef(null);
+  const triggerRef = useRef(null);
   const badgeCount = useMemo(() => {
     const unique = new Set([selectedA, selectedB].filter(Boolean));
     return unique.size;
@@ -71,9 +72,33 @@ const ComparisonTool = ({
       });
     } else {
       document.body.classList.remove('compare-open');
+      // Return focus to the trigger button when modal closes
+      triggerRef.current?.focus();
     }
     return () => document.body.classList.remove('compare-open');
   }, [isOpen]);
+
+  // Focus trap: keep Tab cycling within the modal while open
+  const handleDialogKeyDown = useCallback((e) => {
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = dialogRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first || document.activeElement === dialogRef.current) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
 
   const handleToggle = () => {
     if (isOpen) onClose();
@@ -103,6 +128,7 @@ const ComparisonTool = ({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={handleToggle}
+        ref={triggerRef}
       >
         <svg
           className="compare-icon"
@@ -137,6 +163,7 @@ const ComparisonTool = ({
           aria-labelledby="compare-title"
           tabIndex={-1}
           ref={dialogRef}
+          onKeyDown={handleDialogKeyDown}
         >
           <header className="compare-header">
             <div className="compare-header-content">

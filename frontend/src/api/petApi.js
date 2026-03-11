@@ -26,11 +26,44 @@ const pickFirst = (source, keys) => {
 
 export const createPet = async (petData) => {
   const response = await axios.post(`${API_URL}/api/pets`, petData);
-  return response.data;
+  const result = response.data;
+
+  // Store session token for authenticated PUT/DELETE calls
+  if (result.session_token) {
+    localStorage.setItem('sessionToken', result.session_token);
+  }
+
+  return result;
 };
 
 export const getRecommendations = async (petId) => {
   const response = await axios.get(`${API_URL}/api/recommendations/${petId}`);
+  return response.data;
+};
+
+const authHeaders = () => {
+  const token = localStorage.getItem('sessionToken');
+  return token ? { 'X-Session-Token': token } : {};
+};
+
+export const getPet = async (petId) => {
+  const response = await axios.get(`${API_URL}/api/pets/${petId}`, {
+    headers: authHeaders(),
+  });
+  return response.data;
+};
+
+export const updatePet = async (petId, petData) => {
+  const response = await axios.put(`${API_URL}/api/pets/${petId}`, petData, {
+    headers: authHeaders(),
+  });
+  return response.data;
+};
+
+export const deletePet = async (petId) => {
+  const response = await axios.delete(`${API_URL}/api/pets/${petId}`, {
+    headers: authHeaders(),
+  });
   return response.data;
 };
 
@@ -93,7 +126,7 @@ const collectIngredients = (product) => {
 };
 
 export const transformRecommendation = (recommendation, index = 0) => {
-  const product = recommendation.product || recommendation;
+  const product = recommendation?.product || recommendation || {};
   const reasons = recommendation.reasons || [];
   const score = Number.isFinite(recommendation.score) ? recommendation.score : recommendation.match_percentage || 0;
 
@@ -106,7 +139,9 @@ export const transformRecommendation = (recommendation, index = 0) => {
 
   const compareId = createCompareId(product, index);
   const detail = {
-    name: product.line || product.id || product.name || '',
+    name: product.id
+      ? product.id.replace(/^[^-]+-/, '').replace(/-/g, ' ')
+      : product.line || product.name || '',
     ingredients: collectIngredients(product),
     feeding: buildFeedingPairs(product),
     analysis: buildAnalysisPairs(product),

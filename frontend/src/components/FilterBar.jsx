@@ -71,7 +71,7 @@ const FilterBar = ({
               <ChevronIcon />
             </button>
             {openFilter === 'brand' && (
-              <div className="filter-popover" role="listbox" aria-label="Brand filter">
+              <div className="filter-popover" role="group" aria-label="Brand filter">
                 {availableBrands.map((brand) => (
                   <label key={brand} className="filter-option">
                     <input
@@ -100,7 +100,7 @@ const FilterBar = ({
               <ChevronIcon />
             </button>
             {openFilter === 'protein' && (
-              <div className="filter-popover" role="listbox" aria-label="Protein filter">
+              <div className="filter-popover" role="group" aria-label="Protein filter">
                 {availableProteins.map((p) => (
                   <label key={p.name} className="filter-option">
                     <input
@@ -138,7 +138,7 @@ const FilterBar = ({
             <ChevronIcon />
           </button>
           {openFilter === 'price' && (
-            <div className="filter-popover" role="listbox" aria-label="Price filter">
+            <div className="filter-popover" role="group" aria-label="Price filter">
               {priceRanges.map((range, idx) => (
                 idx > 0 && (
                   <label key={range.label} className="filter-option">
@@ -168,7 +168,7 @@ const FilterBar = ({
             <ChevronIcon />
           </button>
           {openFilter === 'sort' && (
-            <div className="filter-popover" role="listbox" aria-label="Sort options">
+            <div className="filter-popover" role="group" aria-label="Sort options">
               {SORT_OPTIONS.map((opt) => (
                 <label key={opt.value} className="filter-option">
                   <input

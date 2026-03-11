@@ -157,16 +157,22 @@ const Recommendations = () => {
     return `${count} product${count === 1 ? '' : 's'}`;
   }, [displayFoods]);
 
+  const displayFoodIds = useMemo(() => new Set(displayFoods.map((f) => f.compareId)), [displayFoods]);
   useEffect(() => {
-    if (activeFoodId && !displayFoods.some((food) => food.compareId === activeFoodId)) {
+    if (activeFoodId && !displayFoodIds.has(activeFoodId)) {
       setActiveFoodId(null);
     }
-  }, [displayFoods, activeFoodId]);
+  }, [displayFoodIds, activeFoodId]);
 
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
-        const storedPetData = JSON.parse(localStorage.getItem('petData') || '{}');
+        let storedPetData = {};
+        try {
+          storedPetData = JSON.parse(localStorage.getItem('petData') || '{}');
+        } catch {
+          localStorage.removeItem('petData');
+        }
         if (!storedPetData || !storedPetData.ageGroup) {
           navigate('/');
           return;
@@ -232,11 +238,11 @@ const Recommendations = () => {
     return map[goal?.toLowerCase()] || goal;
   };
 
-  const handleToggleCard = (compareId) => {
+  const handleToggleCard = useCallback((compareId) => {
     setActiveFoodId((prev) => (prev === compareId ? null : compareId));
-  };
+  }, []);
 
-  const openCompareModal = (focusFood = null) => {
+  const openCompareModal = useCallback((focusFood = null) => {
     if (!displayFoods.length) return;
     const sortedFoods = [...displayFoods].sort((a, b) => formatCompareLabel(a).localeCompare(formatCompareLabel(b)));
 
@@ -257,11 +263,11 @@ const Recommendations = () => {
       primary: targetPrimary,
       secondary: targetSecondary,
     });
-  };
+  }, [displayFoods, compareState.primary]);
 
-  const closeCompareModal = () => {
+  const closeCompareModal = useCallback(() => {
     setCompareState((prev) => ({ ...prev, isOpen: false }));
-  };
+  }, []);
 
   const updateCompareSelection = (next) => {
     setCompareState((prev) => {
@@ -388,6 +394,9 @@ const Recommendations = () => {
 
   return (
     <>
+      {/* Logo */}
+      <img src="/logo.png" alt="Pet AI Assistant" className="rec-logo" />
+
       {/* Pet Profile Summary */}
       <section className="pet-profile">
         <div className="profile-card">
@@ -500,7 +509,7 @@ const Recommendations = () => {
         )}
 
         <div className="food-section">
-          <div className="food-grid">
+          <div className={`food-grid${activeFoodId ? ' has-expanded' : ''}`}>
             {displayFoods.map((food, idx) => (
               <FoodCard
                 key={food.compareId || idx}
@@ -556,7 +565,7 @@ const Recommendations = () => {
         isOpen={compareState.isOpen}
         selectedA={compareState.primary}
         selectedB={compareState.secondary}
-        onOpen={() => openCompareModal()}
+        onOpen={openCompareModal}
         onClose={closeCompareModal}
         onSelectChange={updateCompareSelection}
         petName={petData?.name || ''}
