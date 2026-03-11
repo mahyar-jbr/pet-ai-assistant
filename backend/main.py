@@ -100,6 +100,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url=None if os.getenv("ENV") == "production" else "/docs",
     redoc_url=None if os.getenv("ENV") == "production" else "/redoc",
+    openapi_url=None if os.getenv("ENV") == "production" else "/openapi.json",
 )
 app.state.limiter = limiter
 
@@ -1437,7 +1438,29 @@ async def get_recommendations(request: Request, pet_id: str):
 
         # Step 4: Score each product using our scoring algorithm
         scored_products = []
+        allergy_filtered = 0
+        pet_allergies = [a.lower().strip() for a in pet_profile.get("allergies", [])]
+
         for product in all_products:
+            # Secondary allergen safety net: scan raw ingredients text
+            # Catches allergens missing from allergen_tags (data quality issue)
+            if pet_allergies:
+                ingredients_lower = product.get("ingredients", "").lower()
+                allergen_tags_lower = product.get("allergen_tags", "").lower()
+                found_allergen = None
+                for allergen in pet_allergies:
+                    if allergen in ingredients_lower:
+                        found_allergen = allergen
+                        if allergen not in allergen_tags_lower:
+                            logger.warning(
+                                "Data quality: '%s' found in ingredients but not in allergen_tags for product '%s'",
+                                allergen, product.get("_id", "unknown")
+                            )
+                        break
+                if found_allergen:
+                    allergy_filtered += 1
+                    continue
+
             score, reasons = score_product_for_pet(product, pet_profile, price_percentiles)
 
             # Only include products with score >= 50 (decent match)
@@ -1458,8 +1481,10 @@ async def get_recommendations(request: Request, pet_id: str):
 
         return {
             "pet": pet_profile,
-            "total_matches": len(scored_products),      # How many products scored 50+
-            "recommendations": top_recommendations       # Top 20 products
+            "total_products": len(all_products),         # Total products before filtering
+            "allergy_filtered": allergy_filtered,         # Products removed due to allergies
+            "total_matches": len(scored_products),        # How many products scored 50+
+            "recommendations": top_recommendations        # Top 20 products
         }
 
     except HTTPException:
