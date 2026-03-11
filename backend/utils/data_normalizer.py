@@ -27,6 +27,11 @@ from typing import Dict, List, Optional
 import re   # Regular expressions for pattern matching
 
 
+def strip_html(text: str) -> str:
+    """Remove HTML tags from text. Returns empty string if input is falsy."""
+    return re.sub(r'<[^>]+>', '', text) if text else ''
+
+
 # ============================================
 # ProductNormalizer Class
 # ============================================
@@ -54,11 +59,11 @@ class ProductNormalizer:
             Input:  {"brand": "ORIJEN", "form": "Dry Kibble", ...}
             Output: {"brand": "ORIJEN", "form": "dry", ...}
         """
-        # --- Base Product Info ---
+        # --- Base Product Info (strip HTML from all text fields) ---
         product = {
-            'brand': scraped_data.get('brand', ''),
-            'name': scraped_data.get('name', ''),
-            'line': scraped_data.get('line', ''),
+            'brand': strip_html(scraped_data.get('brand', '')),
+            'name': strip_html(scraped_data.get('name', '')),
+            'line': strip_html(scraped_data.get('line', '')),
             'form': ProductNormalizer._normalize_form(scraped_data.get('form', 'dry')),
             'url': scraped_data.get('url', ''),
             'image': scraped_data.get('image_url', ''),
@@ -77,11 +82,11 @@ class ProductNormalizer:
         product['omega3_pct'] = scraped_data.get('omega3_pct')
         product['omega6_pct'] = scraped_data.get('omega6_pct')
 
-        # Ingredients
-        product['ingredients'] = scraped_data.get('ingredients', '')
+        # Ingredients (strip HTML tags from scraped text)
+        product['ingredients'] = strip_html(scraped_data.get('ingredients', ''))
 
         # AAFCO statement
-        product['aafco_statement'] = scraped_data.get('aafco_statement', '')
+        product['aafco_statement'] = strip_html(scraped_data.get('aafco_statement', ''))
 
         # Feeding facts
         feeding_facts = scraped_data.get('feeding_facts', {})

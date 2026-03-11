@@ -19,7 +19,7 @@ API docs: http://localhost:8000/docs
 # Imports
 # ============================================
 
-from fastapi import FastAPI, HTTPException, Request  # Web framework and HTTP error handling
+from fastapi import FastAPI, HTTPException, Header, Query, Request  # Web framework and HTTP error handling
 from fastapi.middleware.cors import CORSMiddleware   # Allow cross-origin requests (frontend → backend)
 from fastapi.responses import JSONResponse           # Custom error responses
 from motor.motor_asyncio import AsyncIOMotorClient   # Async MongoDB driver (non-blocking DB calls)
@@ -28,6 +28,9 @@ from typing import List, Optional                    # Type hints for better cod
 from bson import ObjectId                            # MongoDB's unique ID type
 from contextlib import asynccontextmanager           # For lifespan management
 import os                                            # Access environment variables
+import re                                            # Regex sanitization for query filters
+import uuid                                          # Random UUIDs for pet public IDs and session tokens
+import asyncio                                       # For async timeout on DB ping
 import time                                          # For request duration tracking
 import logging                                       # Structured logging
 from slowapi import Limiter                          # Rate limiting
@@ -52,7 +55,7 @@ logger = logging.getLogger("petai")
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "petai")
 
-client = AsyncIOMotorClient(MONGODB_URL)
+client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
 database = client[DATABASE_NAME]
 pets_collection = database["pets"]
 products_collection = database["products"]
@@ -66,20 +69,15 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown logic."""
     # --- Startup ---
     logger.info("Pet AI Assistant API starting up...")
-    try:
-        await client.admin.command("ping")
-        logger.info("MongoDB connection verified (database: %s)", DATABASE_NAME)
-    except Exception as e:
-        logger.error("MongoDB connection FAILED: %s", e)
-        raise
+    logger.info("MongoDB client initialized (database: %s)", DATABASE_NAME)
 
-    # Create indexes for query performance
+    # Create database indexes for query performance
+    await products_collection.create_index([("format", 1), ("life_stage", 1)])
+    await products_collection.create_index("brand")
     await products_collection.create_index("life_stage")
     await products_collection.create_index("breed_size")
-    await products_collection.create_index("format")
-    await products_collection.create_index("brand")
-    await products_collection.create_index([("format", 1), ("life_stage", 1)])
-    logger.info("MongoDB indexes ensured")
+    await pets_collection.create_index("public_id", unique=True)
+    logger.info("Database indexes ensured")
 
     logger.info("Ready to accept requests!")
     yield
@@ -100,6 +98,8 @@ app = FastAPI(
     description="Backend API for pet food recommendations",
     version="2.0.0",
     lifespan=lifespan,
+    docs_url=None if os.getenv("ENV") == "production" else "/docs",
+    redoc_url=None if os.getenv("ENV") == "production" else "/redoc",
 )
 app.state.limiter = limiter
 
@@ -110,15 +110,15 @@ app.state.limiter = limiter
 # Read allowed origins from env (comma-separated), fallback to localhost for dev
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000"
+    "http://localhost:5173,http://localhost:5174,http://localhost:3000"
 ).split(",")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in ALLOWED_ORIGINS],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "X-Session-Token"],
 )
 
 # ============================================
@@ -138,6 +138,21 @@ async def log_requests(request: Request, call_next):
         response.status_code,
         duration_ms,
     )
+    return response
+
+# ============================================
+# Security Headers Middleware
+# ============================================
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Add security headers to every response."""
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
 # ============================================
@@ -227,20 +242,21 @@ class PetCreate(BaseModel):
 class PetResponse(BaseModel):
     """
     Schema for returning pet data to the frontend.
-    Used when: GET /api/pets, POST /api/pets response
+    Used when: POST /api/pets response, GET /api/pets/{pet_id}
 
-    Includes 'id' field which is generated by MongoDB.
+    - id: Random UUID public identifier (not MongoDB ObjectId)
+    - session_token: Only returned on creation (POST), used for auth on PUT/DELETE/GET
     """
-    id: str                                 # MongoDB ObjectId converted to string
+    id: str                                 # Random UUID public identifier
     name: str
     breedSize: str
     ageGroup: str
     activityLevel: str
     weightGoal: str
     allergies: List[str]
-    breed: Optional[str] = Field(
+    session_token: Optional[str] = Field(
         default=None,
-        description="Deprecated legacy field - prefer breedSize"
+        description="Session token for authenticating pet operations (only returned on creation)"
     )
 
 
@@ -344,21 +360,23 @@ class ProductResponse(BaseModel):
 #   3. Centralizes conversion logic in one place
 
 
-def pet_helper(pet) -> dict:
+def pet_helper(pet, include_token: bool = False) -> dict:
     """
     Convert a MongoDB pet document to API response format.
 
-    MongoDB document:  {"_id": ObjectId("..."), "name": "Buddy", ...}
-    API response:      {"id": "...", "name": "Buddy", ...}
+    MongoDB document:  {"_id": ObjectId("..."), "public_id": "uuid", "name": "Buddy", ...}
+    API response:      {"id": "uuid", "name": "Buddy", ...}
 
-    Uses .get() with defaults to handle missing fields gracefully.
+    Args:
+        pet: MongoDB document dict
+        include_token: If True, include session_token in response (only on creation)
     """
     # Handle legacy field name: old data might use "breed" instead of "breedSize"
     breed_size = pet.get("breedSize", pet.get("breed", ""))
 
     pet_data = {
-        "id": str(pet["_id"]),                  # Convert ObjectId to string for JSON
-        "name": pet.get("name", ""),            # .get() returns "" if field missing
+        "id": pet.get("public_id", str(pet["_id"])),  # Use public_id (UUID), fallback to ObjectId
+        "name": pet.get("name", ""),
         "breedSize": breed_size,
         "ageGroup": pet.get("ageGroup", ""),
         "activityLevel": pet.get("activityLevel", ""),
@@ -366,9 +384,8 @@ def pet_helper(pet) -> dict:
         "allergies": pet.get("allergies", [])
     }
 
-    # Include legacy "breed" field for backward compatibility with old frontend code
-    if pet.get("breed") or breed_size:
-        pet_data["breed"] = pet.get("breed", breed_size)
+    if include_token:
+        pet_data["session_token"] = pet.get("session_token")
 
     return pet_data
 
@@ -467,28 +484,25 @@ async def health_check():
 
 
 @app.post("/api/pets", response_model=PetResponse, status_code=201)
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 async def create_pet(request: Request, pet: PetCreate):
     """
     Create a new pet profile.
 
     - Request body: PetCreate schema (validated automatically by FastAPI)
-    - Returns: The created pet with its MongoDB-generated ID
+    - Returns: The created pet with public_id (UUID) and session_token
     - Status: 201 Created on success
-
-    Flow:
-    1. Pydantic validates the incoming JSON → PetCreate
-    2. Convert to dict and insert into MongoDB
-    3. Fetch the created document (now has _id)
-    4. Convert to response format and return
+    - The session_token must be saved by the client for future PUT/DELETE/GET operations
     """
     try:
         pet_dict = pet.model_dump()
+        pet_dict["public_id"] = str(uuid.uuid4())
+        pet_dict["session_token"] = str(uuid.uuid4())
         result = await pets_collection.insert_one(pet_dict)
         created_pet = await pets_collection.find_one({"_id": result.inserted_id})
 
         if created_pet:
-            return pet_helper(created_pet)
+            return pet_helper(created_pet, include_token=True)
         else:
             raise HTTPException(status_code=500, detail="Failed to create pet")
 
@@ -499,48 +513,28 @@ async def create_pet(request: Request, pet: PetCreate):
         raise HTTPException(status_code=500, detail="Failed to create pet")
 
 
-@app.get("/api/pets", response_model=List[PetResponse])
-async def get_all_pets():
-    """
-    Retrieve all pet profiles.
-
-    - Returns: List of all pets in the database
-    - Status: 200 OK
-
-    Note: Uses 'async for' because Motor returns an async cursor.
-    """
-    try:
-        pets = []
-        async for pet in pets_collection.find():
-            pets.append(pet_helper(pet))
-        return pets
-
-    except Exception as e:
-        logger.error("Error retrieving pets: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to retrieve pets")
-
-
 @app.get("/api/pets/{pet_id}", response_model=PetResponse)
-async def get_pet_by_id(pet_id: str):
+async def get_pet_by_id(
+    pet_id: str,
+    x_session_token: str = Header(..., description="Session token from pet creation")
+):
     """
-    Retrieve a specific pet by ID.
+    Retrieve a specific pet by public UUID.
 
-    - Path parameter: pet_id (the MongoDB ObjectId as string)
-    - Returns: The pet if found
-    - Status: 200 OK, 404 if not found, 400 if invalid ID format
-
-    Example: GET /api/pets/507f1f77bcf86cd799439011
+    - Path parameter: pet_id (UUID string)
+    - Header: X-Session-Token (required)
+    - Returns: The pet if found and token matches
+    - Status: 200 OK, 404 if not found, 403 if token mismatch
     """
     try:
-        if not ObjectId.is_valid(pet_id):
-            raise HTTPException(status_code=400, detail="Invalid pet ID format")
-
-        pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
-
-        if pet:
-            return pet_helper(pet)
-        else:
+        pet = await pets_collection.find_one({"public_id": pet_id})
+        if not pet:
             raise HTTPException(status_code=404, detail="Pet not found")
+
+        if pet.get("session_token") != x_session_token:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+        return pet_helper(pet)
 
     except HTTPException:
         raise
@@ -550,33 +544,37 @@ async def get_pet_by_id(pet_id: str):
 
 
 @app.put("/api/pets/{pet_id}", response_model=PetResponse)
-async def update_pet(pet_id: str, pet: PetCreate):
+@limiter.limit("5/minute")
+async def update_pet(
+    request: Request,
+    pet_id: str,
+    pet: PetCreate,
+    x_session_token: str = Header(..., description="Session token from pet creation")
+):
     """
     Update an existing pet profile (full replacement).
 
-    - Path parameter: pet_id
+    - Path parameter: pet_id (UUID string)
+    - Header: X-Session-Token (required)
     - Request body: PetCreate schema with new data
     - Returns: The updated pet
-    - Status: 200 OK, 404 if not found
-
-    Note: PUT replaces all fields. For partial updates, use PATCH (not implemented).
+    - Status: 200 OK, 404 if not found, 403 if token mismatch
     """
     try:
-        if not ObjectId.is_valid(pet_id):
-            raise HTTPException(status_code=400, detail="Invalid pet ID format")
+        existing_pet = await pets_collection.find_one({"public_id": pet_id})
+        if not existing_pet:
+            raise HTTPException(status_code=404, detail="Pet not found")
+
+        if existing_pet.get("session_token") != x_session_token:
+            raise HTTPException(status_code=403, detail="Forbidden")
 
         pet_dict = pet.model_dump()
-
-        result = await pets_collection.update_one(
-            {"_id": ObjectId(pet_id)},
+        await pets_collection.update_one(
+            {"public_id": pet_id},
             {"$set": pet_dict}
         )
 
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Pet not found")
-
-        updated_pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
-
+        updated_pet = await pets_collection.find_one({"public_id": pet_id})
         if updated_pet:
             return pet_helper(updated_pet)
         else:
@@ -590,25 +588,29 @@ async def update_pet(pet_id: str, pet: PetCreate):
 
 
 @app.delete("/api/pets/{pet_id}")
-async def delete_pet(pet_id: str):
+@limiter.limit("5/minute")
+async def delete_pet(
+    request: Request,
+    pet_id: str,
+    x_session_token: str = Header(..., description="Session token from pet creation")
+):
     """
     Delete a pet profile.
 
-    - Path parameter: pet_id
+    - Path parameter: pet_id (UUID string)
+    - Header: X-Session-Token (required)
     - Returns: Success message with deleted pet ID
-    - Status: 200 OK, 404 if not found
-
-    Note: No response_model because we return a custom message, not PetResponse.
+    - Status: 200 OK, 404 if not found, 403 if token mismatch
     """
     try:
-        if not ObjectId.is_valid(pet_id):
-            raise HTTPException(status_code=400, detail="Invalid pet ID format")
-
-        result = await pets_collection.delete_one({"_id": ObjectId(pet_id)})
-
-        if result.deleted_count == 0:
+        existing_pet = await pets_collection.find_one({"public_id": pet_id})
+        if not existing_pet:
             raise HTTPException(status_code=404, detail="Pet not found")
 
+        if existing_pet.get("session_token") != x_session_token:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+        await pets_collection.delete_one({"public_id": pet_id})
         return {"message": "Pet deleted successfully", "id": pet_id}
 
     except HTTPException:
@@ -632,7 +634,7 @@ async def get_all_products(
     breed_size: Optional[str] = None,
     grain_free: Optional[bool] = None,
     brand: Optional[str] = None,
-    limit: Optional[int] = 100
+    limit: int = Query(default=100, ge=1, le=200)
 ):
     """
     Get all products with optional filtering.
@@ -665,7 +667,7 @@ async def get_all_products(
         if brand:
             # $regex with $options:"i" = case-insensitive partial match
             # "orijen" matches "Orijen", "ORIJEN", etc.
-            query["brand"] = {"$regex": brand, "$options": "i"}
+            query["brand"] = {"$regex": re.escape(brand), "$options": "i"}
 
         # Execute query with limit
         products = []
@@ -717,14 +719,15 @@ async def get_product_by_id(product_id: str):
 #   1. Take a pet profile (size, activity, goals, allergies)
 #   2. Score every product in the database (0-100 points)
 #   3. Filter out products with score < 50
-#   4. Return top 15 matches with explanations
+#   4. Return top 20 matches with explanations
 #
 # Scoring breakdown (100 points max):
-#   - Breed/Kibble Size Match:  0-20 points
-#   - Activity + Weight Goal:   0-40 points (the most important factor)
+#   - Activity + Diet Goal:     0-40 points (the most important factor)
 #   - Nutritional Quality:      0-25 points
+#   - Life Stage Nutrition:     0-15 points (age-specific needs)
 #   - Ingredient Quality:       0-10 points
-#   - Price Value:              0-5  points (placeholder)
+#   - Breed/Kibble Size:        0-5  points
+#   - Price Value:              0-5  points (percentile-based)
 #
 # Hard Filters (instant disqualification):
 #   - Product contains pet's allergens → score = 0
@@ -1365,7 +1368,7 @@ async def get_recommendations(request: Request, pet_id: str):
     3. Score each product using score_product_for_pet()
     4. Filter to products with score >= 50
     5. Sort by score (highest first)
-    6. Return top 15 recommendations
+    6. Return top 20 recommendations
 
     Response:
     {
@@ -1378,11 +1381,8 @@ async def get_recommendations(request: Request, pet_id: str):
     }
     """
     try:
-        # Step 1: Validate and fetch pet profile
-        if not ObjectId.is_valid(pet_id):
-            raise HTTPException(status_code=400, detail="Invalid pet ID format")
-
-        pet = await pets_collection.find_one({"_id": ObjectId(pet_id)})
+        # Step 1: Fetch pet profile by public UUID
+        pet = await pets_collection.find_one({"public_id": pet_id})
         if not pet:
             raise HTTPException(status_code=404, detail="Pet not found")
 
@@ -1450,16 +1450,16 @@ async def get_recommendations(request: Request, pet_id: str):
                     "allergy_safe": True,                # Always True — disqualified products get score 0
                 })
 
-        # Step 5: Sort by score (highest first) and limit to top 15
+        # Step 5: Sort by score (highest first) and limit to top 20
         # lambda x: x["score"] means "sort by the 'score' field"
         # reverse=True means descending order (highest first)
         scored_products.sort(key=lambda x: x["score"], reverse=True)
-        top_recommendations = scored_products[:15]  # Slice first 15
+        top_recommendations = scored_products[:20]  # Slice first 20
 
         return {
             "pet": pet_profile,
             "total_matches": len(scored_products),      # How many products scored 50+
-            "recommendations": top_recommendations       # Top 15 products
+            "recommendations": top_recommendations       # Top 20 products
         }
 
     except HTTPException:

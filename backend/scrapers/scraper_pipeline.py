@@ -22,7 +22,7 @@ from utils.data_normalizer import ProductNormalizer, ProductValidator
 class ScraperPipeline:
     """Pipeline for scraping and storing product data"""
 
-    def __init__(self, mongo_uri: str = None, db_name: str = "pet_food_db"):
+    def __init__(self, mongo_uri: str = None, db_name: str = None):
         """
         Initialize pipeline
 
@@ -33,8 +33,8 @@ class ScraperPipeline:
         # Load environment variables
         load_dotenv()
 
-        self.mongo_uri = mongo_uri or os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-        self.db_name = db_name
+        self.mongo_uri = mongo_uri or os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
+        self.db_name = db_name or os.getenv('DATABASE_NAME', 'petai')
 
         # Connect to MongoDB
         self.client = MongoClient(self.mongo_uri)

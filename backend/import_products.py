@@ -25,6 +25,7 @@ one-time script, not a web server. No need for async complexity here.
 # ============================================
 
 import csv                          # Python's built-in CSV parser
+import os                           # Access environment variables
 import requests                     # HTTP library for fetching the Google Sheet
 from pymongo import MongoClient     # Sync MongoDB driver (not Motor - this is a script)
 from datetime import datetime       # For timestamping imports
@@ -35,12 +36,15 @@ from datetime import datetime       # For timestamping imports
 # ============================================
 
 # Google Sheets "Publish to Web" URL (File → Share → Publish to web → CSV)
-# This makes spreadsheet accessible as a CSV file
-GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSGY9w6n0sjw341N8bHRAsczyRqP9MCim6QZuRX8sAs6YVkpg8x6rVMW6B7DvuX750HiClYKokdJgbr/pub?gid=107126253&single=true&output=csv"
+# Set via env var or fallback to hardcoded URL
+GOOGLE_SHEETS_CSV_URL = os.getenv(
+    "SHEETS_CSV_URL",
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSGY9w6n0sjw341N8bHRAsczyRqP9MCim6QZuRX8sAs6YVkpg8x6rVMW6B7DvuX750HiClYKokdJgbr/pub?gid=107126253&single=true&output=csv"
+)
 
-# MongoDB connection settings
-MONGODB_URL = "mongodb://localhost:27017"
-DATABASE_NAME = "petai"
+# MongoDB connection settings — reads from env var with fallback
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "petai")
 COLLECTION_NAME = "products"
 
 
