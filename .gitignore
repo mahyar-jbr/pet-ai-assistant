@@ -44,3 +44,10 @@ dev-log.md
 
 # Scraped data files
 backend/data/*.json
+PAA_Logo_NoName.png
+PAA_Logo_nobackground.png
+backend/acana_products.csv
+backend/petvalu_prices.json
+backend/fetch_petvalu_prices.py
+backend/update_petvalu.py
+backend/data/
