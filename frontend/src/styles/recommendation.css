@@ -258,6 +258,9 @@ h2,h3,h4{margin-top:0}
   opacity:1;
   transform:scale(1.05);
 }
+.brand-strip-logo--tall{
+  height:64px;
+}
 .brand-strip-dot{
   width:4px;
   height:4px;
@@ -749,6 +752,7 @@ h2,h3,h4{margin-top:0}
     padding:0.6rem 1rem;
   }
   .brand-strip-logo{height:36px}
+  .brand-strip-logo--tall{height:48px}
 }
 
 

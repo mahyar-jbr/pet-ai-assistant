@@ -1140,7 +1140,9 @@ def calculate_life_stage_score(
             score += 3
             reasons.append(f"Formulated for {name}'s puppy life stage")
 
-        # Ca:P ratio for growing bones
+        # Ca:P ratio for growing bones (neutral 7/15 if data missing)
+        if not calcium_pct or not phosphorus_pct:
+            return 7.0, reasons if reasons else [f"Standard nutrition for {name}"]
         if 1.0 <= ca_p_ratio <= 1.8:
             score += 5
             reasons.append(f"Optimal calcium-phosphorus ratio for {name}'s growing bones")
@@ -1180,7 +1182,9 @@ def calculate_life_stage_score(
             score += 5
             reasons.append(f"Formulated for {name}'s adult life stage")
 
-        # Balanced Ca:P
+        # Balanced Ca:P (neutral 7/15 if data missing)
+        if not calcium_pct or not phosphorus_pct:
+            return 7.0, reasons if reasons else [f"Standard nutrition for {name}"]
         if 1.0 <= ca_p_ratio <= 2.0:
             score += 5
 
@@ -1473,18 +1477,18 @@ async def get_recommendations(request: Request, pet_id: str):
                     "allergy_safe": True,                # Always True — disqualified products get score 0
                 })
 
-        # Step 5: Sort by score (highest first) and limit to top 20
+        # Step 5: Sort by score (highest first) and limit to top 40
         # lambda x: x["score"] means "sort by the 'score' field"
         # reverse=True means descending order (highest first)
         scored_products.sort(key=lambda x: x["score"], reverse=True)
-        top_recommendations = scored_products[:20]  # Slice first 20
+        top_recommendations = scored_products[:40]  # Send up to 40 (frontend displays 20, filters reveal more)
 
         return {
             "pet": pet_profile,
             "total_products": len(all_products),         # Total products before filtering
             "allergy_filtered": allergy_filtered,         # Products removed due to allergies
             "total_matches": len(scored_products),        # How many products scored 50+
-            "recommendations": top_recommendations        # Top 20 products
+            "recommendations": top_recommendations        # Top 40 products
         }
 
     except HTTPException:

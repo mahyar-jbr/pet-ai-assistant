@@ -1,6 +1,6 @@
 # Pet AI Assistant
 
-A full-stack dog food recommendation app that helps owners find the best food for their dog. Create a pet profile and get personalized, scored matches from 84 premium products across Orijen, Acana, and Open Farm.
+A full-stack dog food recommendation app that helps owners find the best food for their dog. Create a pet profile and get personalized, scored matches from 114 products across Orijen, Acana, Open Farm, and Performatrin Ultra.
 
 ---
 
@@ -42,9 +42,9 @@ A full-stack dog food recommendation app that helps owners find the best food fo
 - Indexed on `life_stage`, `breed_size`, `format`, `brand`
 
 ### Data
-- **84 products** across 3 premium brands (Orijen, Acana, Open Farm)
+- **114 products** across 4 brands (Orijen, Acana, Open Farm, Performatrin Ultra)
 - Complete nutritional data: protein%, fat%, fiber%, omega-3/6, DHA, EPA
-- Canadian pricing, official brand images
+- Canadian pricing (CAD), official brand images, all sourced from PetValu.ca
 
 ---
 
@@ -130,7 +130,7 @@ npm run dev
 - Contains any of the pet's allergens (exact match via set intersection)
 - Kibble size incompatible with breed size
 
-Only products scoring 50+ are returned, sorted by score descending.
+Only products scoring 50+ are returned, sorted by score descending. Backend sends up to 40; frontend shows top 20 by default, with filters revealing more from the pool.
 
 ---
 
@@ -140,7 +140,7 @@ Only products scoring 50+ are returned, sorted by score descending.
 backend/
 ├── main.py                 # App, models, routes, scoring engine
 ├── import_products.py      # CSV → MongoDB import (upsert)
-├── product_data.csv        # 84 products (source of truth)
+├── product_data.csv        # 114 products (source of truth)
 ├── .env.example            # Environment variable template
 ├── scrapers/               # Web scrapers (Orijen, PetValu)
 └── utils/
@@ -152,10 +152,11 @@ frontend/
 │   │   ├── PetForm.jsx          # 7-step wizard form
 │   │   └── Recommendations.jsx  # Results with filters, sort, comparison
 │   ├── components/
-│   │   ├── FoodCard.jsx         # Product card: 7-element surface + 3-zone expand
+│   │   ├── FoodCard.jsx         # Product card: 7-element surface, click opens overlay
+│   │   ├── ProductDetail.jsx    # Full-page product detail overlay (DoorDash-style)
+│   │   ├── ScoreRing.jsx        # SVG circular score gauge (animated)
 │   │   ├── FilterBar.jsx        # Popover filter buttons with counts
-│   │   ├── ComparisonTool.jsx   # Side-by-side comparison modal
-│   │   └── AllergyPills.jsx     # Tag input for allergies
+│   │   └── ComparisonTool.jsx   # Side-by-side comparison modal
 │   ├── api/petApi.js            # API client
 │   └── utils/
 │       ├── foodUtils.js         # Tag parsing, formatting, comparison logic

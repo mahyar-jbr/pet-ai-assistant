@@ -36,6 +36,7 @@ const Recommendations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [allergyStats, setAllergyStats] = useState(null);
+  const [totalMatches, setTotalMatches] = useState(0);
   const [sortOption, setSortOption] = useState('default');
   const [compareState, setCompareState] = useState({ isOpen: false, primary: '', secondary: '' });
 
@@ -144,7 +145,11 @@ const Recommendations = () => {
     }
 
     // Sort
-    if (sortOption === 'default') return list;
+    if (sortOption === 'default') {
+      // Cap at 20 when no filters or sort active
+      if (!hasActiveFilters) return list.slice(0, 20);
+      return list;
+    }
     const sorted = [...list];
 
     switch (sortOption) {
@@ -181,18 +186,22 @@ const Recommendations = () => {
     }
 
     return sorted;
-  }, [foods, sortOption, selectedBrands, priceRangeIndex, selectedProteins, grainFreeOnly]);
+  }, [foods, sortOption, selectedBrands, priceRangeIndex, selectedProteins, grainFreeOnly, hasActiveFilters]);
 
   const resultsLabel = useMemo(() => {
     const count = displayFoods.length;
-    return `${count} product${count === 1 ? '' : 's'}`;
-  }, [displayFoods]);
+    const isDefault = !hasActiveFilters && sortOption === 'default';
+    if (isDefault && totalMatches > count) {
+      return `Showing top ${count} of ${totalMatches} matches`;
+    }
+    return `Showing ${count} of ${totalMatches} match${totalMatches === 1 ? '' : 'es'}`;
+  }, [displayFoods, hasActiveFilters, sortOption, totalMatches]);
 
   // Find the selected food object for the overlay
   const selectedFood = useMemo(() => {
     if (!selectedFoodId) return null;
-    return displayFoods.find((f) => f.compareId === selectedFoodId) || null;
-  }, [selectedFoodId, displayFoods]);
+    return foods.find((f) => f.compareId === selectedFoodId) || null;
+  }, [selectedFoodId, foods]);
 
   useEffect(() => {
     const loadRecommendations = async () => {
@@ -213,6 +222,8 @@ const Recommendations = () => {
         const response = await getRecommendations(petId);
         const recommendations = response.recommendations || [];
         const transformedFoods = recommendations.map((item, index) => transformRecommendation(item, index));
+
+        setTotalMatches(response.total_matches || transformedFoods.length);
 
         if (response.allergy_filtered > 0) {
           setAllergyStats({
@@ -542,6 +553,8 @@ const Recommendations = () => {
             <img src="/brands/acana.png" alt="Acana" className="brand-strip-logo" />
             <span className="brand-strip-dot" aria-hidden="true" />
             <img src="/brands/open-farm.png" alt="Open Farm" className="brand-strip-logo" />
+            <span className="brand-strip-dot" aria-hidden="true" />
+            <img src="/brands/PerformatrinUltra-logo.svg" alt="Performatrin Ultra" className="brand-strip-logo brand-strip-logo--tall" />
           </div>
         </div>
       )}
