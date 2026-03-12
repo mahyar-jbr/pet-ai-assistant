@@ -32,6 +32,7 @@ import re                                            # Regex sanitization for qu
 import uuid                                          # Random UUIDs for pet public IDs and session tokens
 import asyncio                                       # For async timeout on DB ping
 import time                                          # For request duration tracking
+from datetime import datetime                        # Timestamps for pet profile tracking
 import logging                                       # Structured logging
 from slowapi import Limiter                          # Rate limiting
 from slowapi.util import get_remote_address          # Get client IP for rate limiting
@@ -197,6 +198,7 @@ class PetCreate(BaseModel):
     activityLevel: str
     weightGoal: str
     allergies: Optional[List[str]] = Field(default=[], max_length=20)
+    screen_width: Optional[int] = None
 
     @field_validator("breedSize")
     @classmethod
@@ -499,6 +501,13 @@ async def create_pet(request: Request, pet: PetCreate):
         pet_dict = pet.model_dump()
         pet_dict["public_id"] = str(uuid.uuid4())
         pet_dict["session_token"] = str(uuid.uuid4())
+        # Submission tracking metadata (internal analytics, not returned to frontend)
+        pet_dict["created_at"] = datetime.utcnow()
+        pet_dict["updated_at"] = datetime.utcnow()
+        pet_dict["user_agent"] = request.headers.get("user-agent", "")
+        forwarded = request.headers.get("x-forwarded-for", request.client.host if request.client else "")
+        pet_dict["ip_address"] = forwarded.split(",")[0].strip() if forwarded else ""
+        pet_dict["referrer"] = request.headers.get("referer", "")
         result = await pets_collection.insert_one(pet_dict)
         created_pet = await pets_collection.find_one({"_id": result.inserted_id})
 
@@ -570,6 +579,7 @@ async def update_pet(
             raise HTTPException(status_code=403, detail="Forbidden")
 
         pet_dict = pet.model_dump()
+        pet_dict["updated_at"] = datetime.utcnow()
         await pets_collection.update_one(
             {"public_id": pet_id},
             {"$set": pet_dict}

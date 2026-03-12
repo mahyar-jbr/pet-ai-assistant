@@ -163,6 +163,7 @@ const PetForm = () => {
       activityLevel,
       weightGoal,
       allergies,
+      screen_width: window.innerWidth,
     };
 
     try {
