@@ -51,3 +51,7 @@ backend/petvalu_prices.json
 backend/fetch_petvalu_prices.py
 backend/update_petvalu.py
 backend/data/
+
+# Working/backup data files
+backend/performatrin_ultra_34_rows.csv
+backend/product_data_80_backup.csv
