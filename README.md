@@ -1,25 +1,51 @@
 # Pet AI Assistant
 
-A full-stack dog food recommendation app that helps owners find the best food for their dog. Create a pet profile and get personalized, scored matches from 114 products across Orijen, Acana, Open Farm, and Performatrin Ultra.
+A full-stack dog food recommendation and tracking app. Create your dog's profile, get personalized scored recommendations from 114 products across 4 premium brands, then track your purchases, monitor bag depletion, and know exactly when to reorder.
+
+**Live:** [pet-ai-assistant-seven.vercel.app](https://pet-ai-assistant-seven.vercel.app)
 
 ---
 
 ## Features
 
+### Recommendation Engine
 - **7-Step Guided Wizard** — Step-by-step pet profile creation with trust signals, visual cards, and common allergy chips
 - **Scoring Algorithm** — 6-factor, 100-point scoring system validated against veterinary science (AAFCO, NRC, WSAVA)
   - Activity+goal (40pts), nutritional quality (25pts), life-stage nutrition (15pts), ingredient quality (10pts), breed/kibble size (5pts), price value (5pts)
 - **Hard Filters** — Automatic allergen disqualification (set intersection) and kibble size incompatibility detection
 - **Life-Stage Nutrition** — Puppy Ca:P ratio + DHA scoring, senior fiber + omega-3 scoring, adult formulation matching
 - **Personalized Results** — Match reasons reference your dog by name and connect to their profile
-- **Popover Filters** — Filter by brand, protein source, grain-free, and price using popover dropdowns with counts (Airbnb/ASOS pattern)
-- **Food Card Zones** — Collapsed 7-element surface with expandable 3-zone detail panel (nutrition bars, ingredients, feeding calculator)
-- **Feeding Calculator** — Personalized daily cups, cost/day, cost/month, and bag duration based on your dog's weight and activity
+- **Dynamic Product Pool** — Backend sends 40 scored products; frontend shows top 20 by default, filters reveal more
+- **Popover Filters** — Filter by brand, protein source, grain-free, and price using popover dropdowns with counts
+- **Product Detail Overlay** — DoorDash-style slide-up with 3 content zones (nutrition, ingredients, feeding calculator)
+- **Feeding Calculator** — Personalized daily cups, cost/day, cost/month, and bag duration based on weight and activity
 - **Side-by-Side Comparison** — Compare two foods with winner highlighting across all metrics
-- **Favorites** — Save top picks with localStorage persistence
 - **Allergy Safe Badges** — Visual confirmation that each recommended food passed allergen checks
-- **Shop Buttons** — Direct links to buy each product from retailers
-- **Responsive Design** — Mobile bottom sheets, responsive grid, works across all devices
+- **Shop Buttons** — Direct links to buy from PetValu.ca
+
+### User Accounts & Dashboard
+- **Magic Link Auth** — Passwordless email login via Resend (no passwords to manage)
+- **JWT Authentication** — 30-day tokens, Bearer header, protected routes
+- **Pet Dashboard** — Profile card, active food with depletion tracking, purchase history, spending summary
+- **Purchase Tracking** — "I Bought This" button, 2-step log modal, auto-depletion calculation
+- **Depletion Countdown** — Color-coded progress bar (blue > amber > red), days remaining, estimated empty date
+- **Personalized Greeting** — Time-of-day greeting with urgency prompts when food is running low
+- **Reorder Links** — Direct retailer links when bag is running low
+- **Edit & Delete Purchases** — Modify active purchase, delete from history with confirmation
+- **Extend Bag** — "I Still Have Some" button adds 7 days when bag shows empty
+- **Save Results Banner** — Inline card in food grid prompting anonymous users to create accounts
+- **Account Management** — Email display, logout, delete account with confirmation
+- **Unified Header** — Same nav on recommendations and dashboard when logged in
+- **Page Transitions** — Smooth fade+slide animation between pages
+- **Guest Mode Preserved** — Full functionality without login; accounts are opt-in
+
+### Infrastructure
+- **Error Boundary** — Catches React render errors, shows recovery UI
+- **Vercel Analytics** — Anonymous usage tracking
+- **Privacy Policy & Terms** — Legal pages at /privacy and /terms
+- **SEO** — robots.txt, sitemap.xml, OG meta tags
+- **CSP** — Content Security Policy meta tag
+- **Responsive Design** — Mobile bottom sheets, responsive grids, touch-friendly targets
 
 ---
 
@@ -27,23 +53,28 @@ A full-stack dog food recommendation app that helps owners find the best food fo
 
 ### Frontend
 - **React 19** + **Vite 7** — Modern UI with fast HMR
-- **React Router 7** — Client-side routing
+- **React Router 7** — Client-side routing with protected routes
 - **Axios** — HTTP client for API calls
-- **Custom CSS** — Blue/white palette, animations, skeleton loading
+- **jwt-decode** — JWT expiry checking on client side
+- **@vercel/analytics** — Usage analytics
+- **Custom CSS** — Blue/white design system, animations, skeleton loading, page transitions
 
 ### Backend
 - **FastAPI** — Async Python web framework
 - **Motor** — Async MongoDB driver
 - **Pydantic** — Request/response validation with field validators
-- **Python logging** — Structured logging with request middleware
+- **python-dotenv** — Environment variable management
+- **Resend** — Magic link email delivery
+- **PyJWT** — JWT token generation and validation
+- **slowapi** — Rate limiting
 
 ### Database
-- **MongoDB** — `petai` database with `pets` and `products` collections
-- Indexed on `life_stage`, `breed_size`, `format`, `brand`
+- **MongoDB** — `petai` database with `pets`, `products`, `users`, and `purchases` collections
+- Indexed on `life_stage`, `breed_size`, `format`, `brand`, `email` (unique), `magic_link_token`
 
 ### Data
 - **114 products** across 4 brands (Orijen, Acana, Open Farm, Performatrin Ultra)
-- Complete nutritional data: protein%, fat%, fiber%, omega-3/6, DHA, EPA
+- Complete nutritional data: protein%, fat%, fiber%, omega-3/6, DHA, EPA, Ca, P
 - Canadian pricing (CAD), official brand images, all sourced from PetValu.ca
 
 ---
@@ -90,21 +121,46 @@ npm run dev
 1. Open `http://localhost:5173`
 2. Walk through the 7-step wizard to create your dog's profile
 3. Get personalized food recommendations
-4. Filter by brand/price, compare foods side-by-side, save favorites
+4. Filter by brand/price, compare foods side-by-side
+5. Create an account to save results, track purchases, and monitor bag depletion
 
 ---
 
+## Routes
+
+| Path | Page | Auth | Description |
+|------|------|------|-------------|
+| `/` | PetForm | No (redirects to /dashboard if logged in) | 7-step pet profile wizard |
+| `/recommendations` | Recommendations | No | Scored food results with filters |
+| `/login` | LoginPage | No | Magic link email entry |
+| `/auth/verify/:token` | MagicLinkVerify | No | Processes magic link from email |
+| `/dashboard` | Dashboard | Yes | Pet profile, active food, purchases |
+| `/dashboard/add-pet` | PetForm | Yes | Add pet to account |
+| `/account` | AccountPage | Yes | Settings, logout, delete |
+| `/privacy` | PrivacyPage | No | Privacy policy |
+| `/terms` | TermsPage | No | Terms of service |
+
 ## API Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check (DB status + version) |
-| POST | `/api/pets` | Create pet profile |
-| GET | `/api/pets/{id}` | Get pet by ID |
-| PUT | `/api/pets/{id}` | Update pet profile |
-| DELETE | `/api/pets/{id}` | Delete pet |
-| GET | `/api/products` | List products (filters: brand, life_stage, breed_size) |
-| GET | `/api/recommendations/{pet_id}` | Get scored recommendations |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/health` | No | Health check (DB status + version) |
+| POST | `/api/pets` | No | Create pet profile |
+| GET | `/api/pets/{id}` | Session | Get pet by ID |
+| PUT | `/api/pets/{id}` | Session | Update pet profile |
+| DELETE | `/api/pets/{id}` | Session | Delete pet |
+| GET | `/api/products` | No | List products (filters: brand, life_stage, breed_size) |
+| GET | `/api/recommendations/{pet_id}` | No | Get scored recommendations |
+| POST | `/api/auth/magic-link` | No | Send magic link email |
+| GET | `/api/auth/verify/{token}` | No | Verify magic link, return JWT |
+| GET | `/api/auth/me` | JWT | Get current user + pets |
+| DELETE | `/api/auth/me` | JWT | Delete account |
+| POST | `/api/purchases` | JWT | Log a purchase |
+| GET | `/api/purchases` | JWT | Get purchases for a pet |
+| PUT | `/api/purchases/{id}` | JWT | Update purchase |
+| DELETE | `/api/purchases/{id}` | JWT | Delete purchase |
+| PATCH | `/api/purchases/{id}/extend` | JWT | Extend purchase by 7 days |
+| POST | `/api/pets/{id}/claim` | JWT | Claim anonymous pet to account |
 
 ---
 
@@ -138,7 +194,7 @@ Only products scoring 50+ are returned, sorted by score descending. Backend send
 
 ```
 backend/
-├── main.py                 # App, models, routes, scoring engine
+├── main.py                 # App, models, routes, scoring engine, auth
 ├── import_products.py      # CSV → MongoDB import (upsert)
 ├── product_data.csv        # 114 products (source of truth)
 ├── .env.example            # Environment variable template
@@ -148,21 +204,47 @@ backend/
 
 frontend/
 ├── src/
+│   ├── App.jsx                     # Router with auth redirect + error boundary
+│   ├── main.jsx                    # React mount + Vercel Analytics
 │   ├── pages/
-│   │   ├── PetForm.jsx          # 7-step wizard form
-│   │   └── Recommendations.jsx  # Results with filters, sort, comparison
+│   │   ├── PetForm.jsx             # 7-step wizard form
+│   │   ├── Recommendations.jsx     # Results with filters, sort, comparison
+│   │   ├── LoginPage.jsx           # Magic link email entry (3-state)
+│   │   ├── MagicLinkVerify.jsx     # Token verification + redirect
+│   │   ├── Dashboard.jsx           # Pet profile, active food, purchases
+│   │   ├── AccountPage.jsx         # Settings, logout, delete account
+│   │   ├── PrivacyPage.jsx         # Privacy policy
+│   │   └── TermsPage.jsx          # Terms of service
 │   ├── components/
-│   │   ├── FoodCard.jsx         # Product card: 7-element surface, click opens overlay
-│   │   ├── ProductDetail.jsx    # Full-page product detail overlay (DoorDash-style)
-│   │   ├── ScoreRing.jsx        # SVG circular score gauge (animated)
-│   │   ├── FilterBar.jsx        # Popover filter buttons with counts
-│   │   └── ComparisonTool.jsx   # Side-by-side comparison modal
-│   ├── api/petApi.js            # API client
-│   └── utils/
-│       ├── foodUtils.js         # Tag parsing, formatting, comparison logic
-│       └── feedingCalculator.js  # RER/MER formula, cups/day, cost, bag duration
-├── .env.production              # API URL for deployment
-└── index.html                   # Meta tags, favicon, OG tags
+│   │   ├── FoodCard.jsx            # Product card: 7-element surface
+│   │   ├── ProductDetail.jsx       # Full-page detail overlay (DoorDash-style)
+│   │   ├── ScoreRing.jsx           # SVG circular score gauge (animated)
+│   │   ├── FilterBar.jsx           # Popover filter buttons with counts
+│   │   ├── ComparisonTool.jsx      # Side-by-side comparison modal
+│   │   ├── LogPurchaseModal.jsx    # 2-step purchase logging / editing
+│   │   ├── SaveResultsBanner.jsx   # Inline signup prompt in food grid
+│   │   ├── ProtectedRoute.jsx      # Auth guard for protected routes
+│   │   └── ErrorBoundary.jsx       # React error boundary
+│   ├── api/
+│   │   └── petApi.js               # Axios client, all API calls, auth headers
+│   ├── utils/
+│   │   ├── auth.js                 # JWT token management (get/set/clear/check)
+│   │   ├── foodUtils.js            # Tag parsing, formatting, comparison logic
+│   │   └── feedingCalculator.js    # RER/MER formula, cups/day, cost, bag duration
+│   └── styles/
+│       ├── form.css                # Form page + CSS variables
+│       ├── recommendation.css      # Results page, food cards, filters
+│       ├── detail-overlay.css      # Product detail overlay zones
+│       ├── dashboard.css           # Dashboard + purchase modal
+│       └── login.css               # Login, account, legal pages
+├── public/
+│   ├── logo.png                    # App logo
+│   ├── brands/                     # Brand logos (orijen, acana, open-farm, performatrin-ultra)
+│   ├── robots.txt                  # SEO crawl rules
+│   └── sitemap.xml                 # SEO sitemap
+├── .env.production                 # API URL for deployment
+├── vercel.json                     # SPA rewrites for Vercel
+└── index.html                      # Meta tags, CSP, OG tags
 ```
 
 ---
@@ -174,15 +256,63 @@ frontend/
 MONGODB_URL=mongodb://localhost:27017
 DATABASE_NAME=petai
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+ENV=development
+JWT_SECRET=your-secret-key          # REQUIRED in production — app crashes on startup if missing
+RESEND_API_KEY=re_xxxxxxxxxxxx      # Resend API key for magic link emails
+MAGIC_LINK_BASE_URL=http://localhost:5173  # Frontend URL used in magic link emails
 ```
+> **Production note:** `ENV=production` disables `/docs`, `/redoc`, and `/openapi.json`. The app will refuse to start if `ENV=production` and `JWT_SECRET` is not set.
 
 ### Frontend (`frontend/.env.production`)
 ```
-VITE_API_URL=https://your-api.up.railway.app
+VITE_API_URL=https://pet-ai-assistant-production.up.railway.app
 ```
+
+---
+
+## Security
+
+### Authentication
+- **Magic link auth** — passwordless email login via Resend (no passwords stored)
+- **JWT tokens** — HS256, 30-day expiry, Bearer header on all protected endpoints
+- **Production crash guard** — app refuses to start if `ENV=production` and `JWT_SECRET` is not set
+- **Magic link tokens hashed** — SHA-256 hashed before storage in MongoDB (plaintext never persisted)
+- **Session tokens** — UUID per pet for anonymous pet CRUD operations (`X-Session-Token` header)
+- **Pet claiming** — anonymous pets linked to user accounts via session token during magic link verification
+
+### API Security
+- **Rate limiting** — slowapi: POST pets 5/min, PUT/DELETE 5/min, recommendations 20/min, magic link 3/min, global 60/min
+- **CORS** — `ALLOWED_ORIGINS` env var, `allow_credentials=False`, explicit methods/headers
+- **Security headers** — HSTS, X-Frame-Options DENY, X-Content-Type-Options nosniff, X-XSS-Protection, Referrer-Policy
+- **Input validation** — Pydantic models with field validators, enum enforcement, length limits
+- **Brand filter sanitized** — `re.escape()` prevents regex injection
+- **Owner-only authorization** — all purchase/pet endpoints verify the authenticated user owns the resource
+- **Safe error handling** — stack traces logged server-side only, generic message returned to client
+
+### Frontend Security
+- **CSP meta tag** — restricts `script-src`, `style-src`, `connect-src`, `img-src`, `font-src`
+- **Source maps disabled** — `sourcemap: false` in production builds
+- **No `dangerouslySetInnerHTML`** — zero XSS vectors in React components
+- **Error boundary** — catches render crashes, shows recovery UI
+
+### Data Protection
+- **IP addresses hashed** — SHA-256 truncated hash stored, not raw IPs
+- **Log scrubbing** — emails truncated, tokens show last 4 chars only in logs
+- **API docs disabled** — `/docs`, `/redoc`, `/openapi.json` all return 404 in production
+- **Allergen defense-in-depth** — allergen_tags check + full ingredients text scan
+- **Privacy Policy** at `/privacy` — covers data collected, third parties (Resend, Vercel, Atlas), deletion rights
+- **Terms of Service** at `/terms` — includes "not veterinary advice" disclaimer
+
+---
+
+## Deployment
+
+- **Frontend:** Vercel (automatic HTTPS + CDN)
+- **Backend:** Railway (FastAPI + uvicorn)
+- **Database:** MongoDB Atlas (free tier M0)
 
 ---
 
 ## License
 
-All rights reserved © 2025 Mahyar JBR. Please do not copy, reuse, or distribute this code without permission.
+All rights reserved © 2026 Mahyar JBR. Please do not copy, reuse, or distribute this code without permission.

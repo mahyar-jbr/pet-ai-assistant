@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pet-ai-assistant-seven.vercel.app/sitemap.xml
