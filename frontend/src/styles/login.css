@@ -1,0 +1,521 @@
+/* ============================
+   LOGIN & MAGIC LINK PAGES
+   ============================ */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #cce4ff;
+  padding: 1.5rem;
+}
+
+.login-card {
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  padding: 48px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, 0.12), 0 2px 8px rgba(0, 87, 255, 0.08);
+  border: 2px solid rgba(0, 87, 255, 0.1);
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #0057ff, #0041cc);
+  border-radius: 24px 24px 0 0;
+}
+
+.login-logo {
+  width: 80px;
+  height: auto;
+  margin-bottom: 0.75rem;
+}
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #003087;
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.login-subtitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-color, #003087);
+  margin: 0 0 0.5rem;
+}
+
+.login-description {
+  font-size: 0.92rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+}
+
+/* ─── Form ─── */
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-field {
+  text-align: left;
+}
+
+.login-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--text-color, #003087);
+  outline: none;
+  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.login-input:focus {
+  border-color: var(--button-bg, #0057ff);
+  box-shadow: 0 0 0 4px rgba(0, 87, 255, .12), 0 4px 12px rgba(0, 87, 255, .15);
+  transform: translateY(-1px);
+}
+
+.login-input--error {
+  border-color: #ef4444;
+}
+
+.login-error {
+  display: block;
+  color: #ef4444;
+  font-size: 0.82rem;
+  margin-top: 0.35rem;
+}
+
+/* ─── Buttons ─── */
+
+.login-card .login-submit {
+  width: 100%;
+  background: linear-gradient(135deg, #0057ff, #0041cc);
+  color: #fff;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.3);
+  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+}
+
+.login-card .login-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0041cc, #003399);
+  box-shadow: 0 6px 24px rgba(0, 87, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.login-card .login-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-resend {
+  width: 100%;
+  padding: 12px 24px;
+  border: 2px solid var(--button-bg, #0057ff);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--button-bg, #0057ff);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.login-resend:hover {
+  background: rgba(0, 87, 255, .06);
+}
+
+.login-alt-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color, #003087);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 0;
+  transition: color .2s;
+}
+
+.login-alt-action:hover {
+  color: var(--button-bg, #0057ff);
+}
+
+/* ─── Sent state ─── */
+
+.login-sent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ─── Divider ─── */
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+/* ─── Alt link ─── */
+
+.login-alt {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.login-alt-link {
+  color: var(--text-color, #003087);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.login-alt-link:hover {
+  color: var(--button-bg, #0057ff);
+}
+
+/* ─── Spinner ─── */
+
+.login-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 1rem auto;
+  border: 4px solid #e5e7eb;
+  border-top-color: var(--button-bg, #0057ff);
+  border-radius: 50%;
+  animation: loginSpin 0.8s linear infinite;
+}
+
+@keyframes loginSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Magic link verify ─── */
+
+.verify-action-link {
+  display: inline-block;
+  text-align: center;
+  margin-top: 1rem;
+  text-decoration: none;
+}
+
+.verify-checkmark {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.verify-success-text {
+  color: #16a34a;
+}
+
+/* ─── Legal pages ─── */
+
+.legal-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--bg-color, #cce4ff);
+  padding: 2rem 1.5rem;
+}
+
+.legal-card {
+  text-align: left;
+  max-width: 720px;
+  width: 100%;
+}
+
+.legal-updated {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 1.5rem;
+}
+
+.legal-body h2 {
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-color, #003087);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.legal-body p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 0.75rem;
+}
+
+.legal-body ul {
+  padding-left: 1.25rem;
+  margin: 0 0 0.75rem;
+}
+
+.legal-body li {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 0.25rem;
+}
+
+.legal-body li strong {
+  color: var(--text-color, #003087);
+}
+
+.legal-link {
+  color: var(--button-bg, #0057ff);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.legal-link:hover {
+  text-decoration: underline;
+}
+
+.legal-note {
+  font-style: italic;
+  margin-top: 1.5rem;
+}
+
+.legal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 87, 255, .08);
+  font-size: 13px;
+}
+
+.legal-dot {
+  color: #94a3b8;
+}
+
+/* ─── Legal links on other pages ─── */
+
+.legal-links-small {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.legal-links-small a {
+  color: var(--button-bg, #0057ff);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.legal-links-small a:hover {
+  text-decoration: underline;
+}
+
+/* ─── Responsive ─── */
+
+@media (max-width: 640px) {
+  .login-card {
+    padding: 32px 22px;
+    border-radius: 20px;
+  }
+  .login-logo {
+    width: 64px;
+  }
+  .login-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* ============================
+   ACCOUNT PAGE
+   ============================ */
+
+.account-back-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  transition: color .2s;
+}
+
+.account-back-link:hover {
+  color: var(--button-bg, #0057ff);
+}
+
+.account-field {
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.account-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.account-value {
+  font-size: 1rem;
+  color: var(--text-color, #003087);
+  margin: 0.25rem 0 0;
+}
+
+.account-feedback-link {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.account-feedback-link:hover {
+  color: var(--button-bg, #0057ff);
+}
+
+.account-divider {
+  border: none;
+  border-top: 1px solid rgba(0, 87, 255, .08);
+  margin: 1.25rem 0;
+}
+
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.account-logout-btn {
+  width: 100%;
+  padding: 12px 24px;
+  border: 2px solid var(--button-bg, #0057ff);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--button-bg, #0057ff);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+  text-align: center;
+}
+
+.account-logout-btn:hover {
+  background: rgba(0, 87, 255, .06);
+}
+
+.account-delete-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0;
+}
+
+.account-delete-trigger:hover {
+  text-decoration: underline;
+}
+
+.account-delete-confirm {
+  text-align: left;
+}
+
+.account-delete-warning {
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  line-height: 1.4;
+  margin: 0 0 1rem;
+}
+
+.account-delete-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.account-delete-btn {
+  padding: 12px 24px;
+  border: 2px solid #ef4444;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #ef4444;
+  transition: all .2s ease;
+}
+
+.account-delete-btn:hover:not(:disabled) {
+  background: #ef4444;
+  color: #fff;
+}
+
+.account-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.account-cancel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 8px 0;
+  transition: color .2s;
+}
+
+.account-cancel-btn:hover {
+  color: var(--text-color, #003087);
+}

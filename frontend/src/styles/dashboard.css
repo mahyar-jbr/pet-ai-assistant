@@ -1,0 +1,1136 @@
+/* ============================
+   DASHBOARD PAGE
+   All styles copied from recommendation.css,
+   detail-overlay.css, and form.css design system.
+   ============================ */
+
+/* Page — same background as recommendations */
+.dashboard-page {
+  min-height: 100vh;
+  background: var(--bg-color, #cce4ff);
+}
+
+/* ─── Header — matches .rec-header layout ─── */
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-logo {
+  height: 80px;
+  width: auto;
+}
+
+.dashboard-header-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+}
+
+/* Nav links — same as .rec-header-link */
+.dashboard-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dash-nav-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.dash-nav-link:hover {
+  color: var(--button-bg, #0057ff);
+  background: rgba(0, 87, 255, .06);
+}
+
+.dash-nav-link--active {
+  color: var(--button-bg, #0057ff);
+  background: rgba(0, 87, 255, .06);
+}
+
+/* Account dropdown */
+.dash-account-menu {
+  position: relative;
+}
+
+.dash-account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dash-account-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.35rem;
+  background: var(--card-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, .12), 0 2px 8px rgba(0, 87, 255, .08);
+  border: 2px solid rgba(0, 87, 255, .1);
+  min-width: 160px;
+  overflow: hidden;
+  z-index: 200;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dash-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color, #003087);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.dash-dropdown-item:hover {
+  background: rgba(0, 87, 255, .04);
+}
+
+.dash-dropdown-item--danger {
+  color: #ef4444;
+}
+
+/* ─── Content — same max-width as .pet-profile + .food-grid ─── */
+
+.dashboard-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ─── Skeleton ─── */
+
+.dashboard-skeleton {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-header {
+  height: 32px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(0,87,255,.06) 25%, rgba(0,87,255,.02) 50%, rgba(0,87,255,.06) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-card {
+  height: 120px;
+  border-radius: 24px;
+  background: linear-gradient(90deg, rgba(0,87,255,.06) 25%, rgba(0,87,255,.02) 50%, rgba(0,87,255,.06) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-card--tall {
+  height: 220px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ─── Error — same as .profile-card ─── */
+
+.dashboard-error {
+  max-width: 480px;
+  margin: 4rem auto;
+  text-align: center;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, .12), 0 2px 8px rgba(0, 87, 255, .08);
+  border: 2px solid rgba(0, 87, 255, .1);
+}
+
+/* ─── Sections ─── */
+
+/* ─── Greeting ─── */
+
+.dash-greeting {
+  margin-bottom: 1.5rem;
+}
+
+.dash-greeting-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-color, #003087);
+  margin: 0;
+}
+
+.dash-greeting-sub {
+  font-size: 0.92rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+/* ─── Sections ─── */
+
+.dash-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Section title — matches .detail-overlay-zone h4 */
+.dash-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #64748b;
+  margin: 0 0 0.75rem;
+}
+
+
+
+/* ─── Buttons — copied from existing design system ─── */
+
+/* Primary: matches .submit-btn from form.css */
+.dash-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--button-bg, #0057ff) 0%, #0041cc 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.3);
+  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.dash-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0041cc 0%, #003399 100%);
+  box-shadow: 0 6px 24px rgba(0, 87, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Outline: matches .detail-buy-btn from detail-overlay.css */
+.dash-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: 2px solid var(--button-bg, #0057ff);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--button-bg, #0057ff);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dash-btn-outline:hover:not(:disabled) {
+  background: var(--button-bg, #0057ff);
+  color: #fff;
+}
+
+/* Ghost: subtle text button */
+/* ─── Pet Card — reuses .profile-card from recommendation.css ─── */
+/* No custom pet card styles — uses .pet-profile .profile-card directly */
+
+.dash-allergy-item {
+  margin-top: 0.5rem;
+}
+
+.dash-pet-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+/* ─── Empty state — matches .profile-card ─── */
+
+.dash-empty-card {
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, .12), 0 2px 8px rgba(0, 87, 255, .08);
+  border: 2px solid rgba(0, 87, 255, .1);
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.dash-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+  margin: 0 0 0.5rem;
+}
+
+.dash-empty-desc {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 1.25rem;
+}
+
+/* ─── Active Food Card — matches .profile-card ─── */
+
+.dash-active-food-card {
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0, 87, 255, .12), 0 2px 8px rgba(0, 87, 255, .08);
+  border: 2px solid rgba(0, 87, 255, .1);
+  padding: 2.5rem;
+}
+
+.dash-active-food-top {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.dash-active-food-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .7);
+  border: 1px solid rgba(0, 87, 255, .12);
+  flex-shrink: 0;
+}
+
+.dash-active-food-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dash-active-food-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+  margin: 0;
+}
+
+
+
+.dash-active-food-size {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.dash-food-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dash-food-score {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--button-bg, #0057ff);
+  background: rgba(0, 87, 255, .08);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.dash-food-tenure {
+  font-size: 0.85rem;
+  color: #64748b;
+  text-align: center;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(0, 87, 255, .06);
+}
+
+.dash-food-tenure strong {
+  color: var(--text-color, #003087);
+  font-weight: 700;
+}
+
+/* ─── Depletion zone — matches .detail-overlay-zone ─── */
+
+.dash-depletion-zone {
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(0, 87, 255, .08);
+  border-left: 3px solid rgba(0, 87, 255, .4);
+  background: rgba(0, 87, 255, .02);
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.dash-depletion-zone--warning {
+  border-color: rgba(245, 158, 11, .15);
+  border-left-color: rgba(245, 158, 11, .6);
+  background: rgba(245, 158, 11, .04);
+}
+
+.dash-depletion-zone--urgent {
+  border-color: rgba(239, 68, 68, .15);
+  border-left-color: rgba(239, 68, 68, .6);
+  background: rgba(239, 68, 68, .04);
+}
+
+.dash-depletion-days {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-color, #003087);
+  margin: 0;
+  line-height: 1.1;
+}
+
+.dash-depletion-days--warning { color: #f59e0b; }
+.dash-depletion-days--urgent { color: #ef4444; }
+
+.dash-depletion-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.dash-depletion-bar {
+  height: 12px;
+  background: rgba(0, 87, 255, .08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dash-depletion-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+.dash-depletion-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+/* ─── Stats row — matches .pet-info-item pattern ─── */
+
+.dash-food-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.dash-food-stat {
+  background: rgba(255, 255, 255, .7);
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 87, 255, .12);
+  text-align: center;
+  transition: all .25s ease;
+}
+
+.dash-food-stat:hover {
+  background: #fff;
+  border-color: rgba(0, 87, 255, .25);
+  box-shadow: 0 4px 12px rgba(0, 87, 255, .1);
+}
+
+.dash-food-stat-value {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+}
+
+.dash-food-stat-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--button-bg, #0057ff);
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+/* ─── Reorder warning — matches zone warning pattern ─── */
+
+.dash-reorder-warning {
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1px solid rgba(245, 158, 11, .15);
+  border-left: 3px solid rgba(245, 158, 11, .6);
+  background: rgba(245, 158, 11, .04);
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 1.25rem;
+}
+
+/* ─── Active food actions ─── */
+
+.dash-active-food-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* ─── Purchase History — zone pattern container ─── */
+
+.dash-purchase-table {
+  border-radius: 16px;
+  padding: 0;
+  border: 1px solid rgba(0, 87, 255, .08);
+  border-left: 3px solid rgba(0, 87, 255, .25);
+  background: rgba(0, 87, 255, .015);
+  overflow: hidden;
+}
+
+.dash-purchase-row {
+  display: grid;
+  grid-template-columns: 70px 32px 1fr 70px 28px;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color, #003087);
+  border-bottom: 1px solid rgba(0, 87, 255, .06);
+  align-items: center;
+}
+
+.dash-purchase-row:nth-child(even) {
+  background: rgba(0, 87, 255, .02);
+}
+
+.dash-purchase-row:last-child {
+  border-bottom: none;
+}
+
+/* Header — matches .detail-overlay-zone h4 pattern */
+.dash-purchase-row--header {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #64748b;
+  background: rgba(0, 87, 255, .03);
+}
+
+.dash-purchase-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .7);
+  border: 1px solid rgba(0, 87, 255, .08);
+}
+
+.dash-purchase-product {
+  color: var(--text-color, #003087);
+  font-weight: 600;
+}
+
+.dash-purchase-switch {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, .1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.dash-purchase-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all .2s;
+  opacity: 0.5;
+}
+
+.dash-purchase-row:hover .dash-purchase-delete {
+  opacity: 1;
+}
+
+.dash-purchase-delete:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, .06);
+}
+
+/* ─── Edit link on active food ─── */
+
+.dash-edit-purchase {
+  background: none;
+  border: none;
+  color: var(--button-bg, #0057ff);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all .2s ease;
+}
+
+.dash-edit-purchase:hover {
+  background: rgba(0, 87, 255, .06);
+}
+
+/* ─── Delete confirmation modal ─── */
+
+.purchase-delete-confirm {
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0, 48, 135, .2), 0 0 0 1px rgba(255, 255, 255, .5);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.purchase-delete-confirm h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+  margin: 0 0 0.5rem;
+}
+
+.purchase-delete-confirm p {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.purchase-delete-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.dash-btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.dash-btn-danger:hover {
+  background: #dc2626;
+}
+
+/* ─── Extend button ─── */
+
+.dash-extend-btn {
+  margin-top: 0.75rem;
+  padding: 8px 16px;
+  border: 2px solid var(--button-bg, #0057ff);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--button-bg, #0057ff);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.dash-extend-btn:hover {
+  background: rgba(0, 87, 255, .06);
+}
+
+/* ─── Spending summary — zone pattern ─── */
+
+.dash-spending-summary {
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1px solid rgba(0, 87, 255, .08);
+  border-left: 3px solid rgba(0, 87, 255, .15);
+  background: rgba(0, 87, 255, .01);
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: left;
+}
+
+/* ─── Bottom CTA ─── */
+
+.dash-bottom-cta {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+.dash-feedback {
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+  padding-bottom: 2rem;
+}
+
+.dash-feedback-link {
+  color: #64748b;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.dash-feedback-link:hover {
+  color: var(--button-bg, #0057ff);
+}
+
+/* ─── Toast ─── */
+
+.dash-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #16a34a;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1200;
+  animation: toastIn 0.3s ease;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ─── Mobile ─── */
+
+@media (max-width: 640px) {
+  .dashboard-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .dashboard-header-title {
+    display: none;
+  }
+
+  .dashboard-content {
+    padding: 1rem;
+  }
+
+  /* Pet card actions mobile */
+  .dash-pet-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .dash-pet-actions .dash-btn-primary,
+  .dash-pet-actions .dash-btn-outline {
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Active food */
+  .dash-active-food-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .dash-active-food-img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .dash-active-food-info {
+    align-items: center;
+  }
+
+  .dash-depletion-days {
+    font-size: 1.5rem;
+  }
+
+  .dash-food-stat {
+    padding: 10px 12px;
+  }
+
+  .dash-active-food-actions {
+    flex-direction: column;
+  }
+
+  .dash-active-food-actions .dash-btn-primary,
+  .dash-active-food-actions .dash-btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Purchase history — 4 columns with smaller thumb */
+  .dash-purchase-row {
+    grid-template-columns: 50px 28px 1fr 50px 24px;
+    font-size: 13px;
+    padding: 0.6rem 1rem;
+  }
+
+  .dash-purchase-thumb {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dash-purchase-delete {
+    opacity: 1;
+  }
+
+  /* Cards */
+  .dash-active-food-card,
+  .dash-empty-card {
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+}
+
+/* ============================
+   LOG PURCHASE MODAL
+   Matches comparison modal pattern
+   ============================ */
+
+.purchase-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 48, 135, .4);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.purchase-modal {
+  background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0, 48, 135, .2), 0 0 0 1px rgba(255, 255, 255, .5);
+  padding: 0;
+  max-width: 480px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  animation: purchaseSlideUp 0.3s ease;
+}
+
+@keyframes purchaseSlideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.purchase-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem 1rem;
+}
+
+.purchase-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+  margin: 0;
+}
+
+.purchase-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: color .2s, background .2s;
+}
+
+.purchase-modal-close:hover {
+  background: rgba(0, 87, 255, .06);
+  color: var(--text-color, #003087);
+}
+
+.purchase-modal-body {
+  padding: 0.5rem 2rem 2rem;
+}
+
+.purchase-modal-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color, #003087);
+  margin: 0 0 0.75rem;
+}
+
+.purchase-modal-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.purchase-modal-error {
+  color: #ef4444;
+  font-size: 13px;
+  margin: 0.75rem 0 0;
+}
+
+/* Product list (step 1) — matches .pet-info-item hover cards */
+.purchase-product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.purchase-product-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, .7);
+  border: 1px solid rgba(0, 87, 255, .12);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all .25s ease;
+}
+
+.purchase-product-item:hover {
+  background: #fff;
+  border-color: rgba(0, 87, 255, .25);
+  box-shadow: 0 4px 12px rgba(0, 87, 255, .1);
+}
+
+.purchase-product-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .7);
+  border: 1px solid rgba(0, 87, 255, .08);
+  flex-shrink: 0;
+}
+
+.purchase-product-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color, #003087);
+}
+
+.purchase-product-score {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--button-bg, #0057ff);
+}
+
+/* Confirm (step 2) */
+.purchase-confirm-product {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.purchase-confirm-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .7);
+  border: 1px solid rgba(0, 87, 255, .08);
+  flex-shrink: 0;
+}
+
+.purchase-confirm-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-color, #003087);
+  margin: 0 0 0.15rem;
+}
+
+.purchase-confirm-score {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--button-bg, #0057ff);
+}
+
+.purchase-fields {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.purchase-field {
+  flex: 1;
+}
+
+/* Field label — matches .pet-info-item strong */
+.purchase-field-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--button-bg, #0057ff);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.purchase-field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Input — matches form.css input pattern */
+.purchase-field-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid rgba(0, 87, 255, 0.15);
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-color, #003087);
+  outline: none;
+  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.purchase-field-input:focus {
+  border-color: var(--button-bg, #0057ff);
+  box-shadow: 0 0 0 4px rgba(0, 87, 255, .12), 0 4px 12px rgba(0, 87, 255, .15);
+}
+
+.purchase-field-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Estimates — matches .detail-overlay-zone */
+.purchase-estimates {
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 1px solid rgba(0, 87, 255, .08);
+  border-left: 3px solid rgba(0, 87, 255, .25);
+  background: rgba(0, 87, 255, .015);
+  margin: 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color, #003087);
+}
+
+.purchase-estimates-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #64748b;
+  margin: 0 0 0.5rem;
+}
+
+.purchase-estimates p {
+  margin: 0.2rem 0;
+}
+
+.purchase-estimates-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Submit — matches .submit-btn */
+.purchase-submit-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--button-bg, #0057ff) 0%, #0041cc 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 87, 255, 0.3);
+  transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.purchase-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0041cc 0%, #003399 100%);
+  box-shadow: 0 6px 24px rgba(0, 87, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.purchase-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.purchase-back-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  transition: color .2s;
+}
+
+.purchase-back-btn:hover {
+  color: var(--button-bg, #0057ff);
+}
