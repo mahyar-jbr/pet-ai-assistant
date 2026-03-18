@@ -1,6 +1,12 @@
+/**
+ * PetForm — 7-step wizard for creating a pet profile. Steps: name, breed size, age, activity,
+ * goal, allergies, review. Stores result in localStorage and creates pet via API.
+ * @route / and /dashboard/add-pet
+ */
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { createPet } from '../api/petApi';
+import { isAuthenticated } from '../utils/auth';
 import '../styles/form.css';
 
 /* ─── Step configuration ─── */
@@ -254,7 +260,7 @@ const PetForm = () => {
                 </div>
                 <div className="how-it-works-step">
                   <div className="how-step-number">2</div>
-                  <p>Our algorithm scores 80+ foods from 3 premium brands</p>
+                  <p>Our algorithm scores 114+ foods from 4 premium brands</p>
                 </div>
                 <div className="how-it-works-step">
                   <div className="how-step-number">3</div>
@@ -262,6 +268,9 @@ const PetForm = () => {
                 </div>
               </div>
             </div>
+            <p className="legal-links-small">
+              <Link to="/privacy">Privacy Policy</Link> &middot; <Link to="/terms">Terms of Service</Link>
+            </p>
           </div>
         );
 
@@ -405,8 +414,14 @@ const PetForm = () => {
   };
 
   return (
-    <div className="container">
+    <div className="container page-transition">
       <div className="form-card wizard-card">
+        {/* Auth link */}
+        <div className="form-header-row">
+          <Link to={isAuthenticated() ? '/dashboard' : '/login'} className="rec-header-link">
+            {isAuthenticated() ? 'Dashboard' : 'Sign In'}
+          </Link>
+        </div>
         {/* Logo — visible on all steps */}
         <img src="/logo.png" alt="Pet AI Assistant" className="form-logo" />
 

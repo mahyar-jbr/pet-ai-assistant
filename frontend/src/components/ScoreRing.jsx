@@ -1,6 +1,12 @@
+/**
+ * ScoreRing — Shared SVG circular score gauge (64px). Animated arc fill,
+ * color-coded: blue 70+, amber 50-69, red <50. Used in ProductDetail and ComparisonTool.
+ * @param {number} score
+ * @param {string} compareId — triggers re-animation on change
+ */
 import { useEffect, useState } from 'react';
 
-const ScoreRing = ({ score, compareId }) => {
+const ScoreRing = ({ score = 0, compareId = '' }) => {
   const radius = 26;
   const circumference = 2 * Math.PI * radius;
   const [offset, setOffset] = useState(circumference);

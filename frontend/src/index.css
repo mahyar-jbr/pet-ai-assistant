@@ -16,3 +16,13 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+/* Page transition */
+.page-transition {
+  animation: pageFadeIn 0.25s ease-out;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

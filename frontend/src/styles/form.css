@@ -110,7 +110,7 @@ body {
 }
 
 /* Typography */
-h1 {
+.form-card h1 {
   font-size: 28px;
   font-weight: 700;
   color: var(--text-color);
@@ -122,7 +122,7 @@ h1 {
   transition: color 0.4s ease;
 }
 
-h1::before {
+.form-card h1::before {
   content: '🐕';
   font-size: 32px;
 }
@@ -466,11 +466,11 @@ input[type="number"]::-webkit-inner-spin-button {
     padding: 36px 28px;
   }
 
-  h1 {
+  .form-card h1 {
     font-size: 24px;
   }
 
-  h1::before {
+  .form-card h1::before {
     font-size: 28px;
   }
 
@@ -649,6 +649,40 @@ input[type="number"]::-webkit-inner-spin-button {
   min-height: 200px;
 }
 
+.form-header-row{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:4px;
+}
+.form-header-row .rec-header-link{
+  font-size:13px;
+  font-weight:600;
+  color:#64748b;
+  text-decoration:none;
+  padding:6px 12px;
+  border:none;
+  background:none;
+  border-radius:8px;
+  transition:all .2s ease;
+}
+.form-header-row .rec-header-link:hover{
+  color:var(--button-bg,#0057ff);
+  background:rgba(0,87,255,.06);
+}
+.legal-links-small{
+  font-size:12px;
+  color:#64748b;
+  margin-top:1rem;
+  text-align:center;
+}
+.legal-links-small a{
+  color:var(--button-bg,#0057ff);
+  text-decoration:none;
+  font-weight:500;
+}
+.legal-links-small a:hover{
+  text-decoration:underline;
+}
 .form-logo {
   display: block;
   margin: 0 auto 20px;

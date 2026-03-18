@@ -8,6 +8,7 @@ import {
   createCompareId,
   poundsFromKg,
 } from '../utils/foodUtils';
+import { getAuthHeader } from '../utils/auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -194,3 +195,81 @@ function normalizeSection(value) {
   const str = (value || '').toString().trim().toLowerCase();
   return str || 'most-popular';
 }
+
+/* ─── Auth API ─── */
+
+export const sendMagicLink = async (email) => {
+  const response = await axios.post(`${API_URL}/api/auth/magic-link`, { email });
+  return response.data;
+};
+
+export const verifyMagicLink = async (token, sessionToken) => {
+  const params = sessionToken ? { session_token: sessionToken } : {};
+  const response = await axios.get(`${API_URL}/api/auth/verify/${token}`, { params });
+  return response.data;
+};
+
+export const getCurrentUser = async () => {
+  const response = await axios.get(`${API_URL}/api/auth/me`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const deleteAccount = async () => {
+  const response = await axios.delete(`${API_URL}/api/auth/me`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+/* ─── Purchase API ─── */
+
+export const createPurchase = async (data) => {
+  const response = await axios.post(`${API_URL}/api/purchases`, data, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const getPurchases = async (petId) => {
+  const response = await axios.get(`${API_URL}/api/purchases`, {
+    params: { pet_id: petId },
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const deletePurchase = async (id) => {
+  const response = await axios.delete(`${API_URL}/api/purchases/${id}`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+/** Update an existing purchase (bag size, cups/day). PUT /api/purchases/{id} */
+export const updatePurchase = async (id, data) => {
+  const response = await axios.put(`${API_URL}/api/purchases/${id}`, data, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+/** Extend an active purchase by 7 days. PATCH /api/purchases/{id}/extend */
+export const extendPurchase = async (id) => {
+  const response = await axios.patch(`${API_URL}/api/purchases/${id}/extend`, {}, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+/* ─── Pet claiming ─── */
+
+export const claimPet = async (petId, sessionToken) => {
+  const response = await axios.post(
+    `${API_URL}/api/pets/${petId}/claim`,
+    { session_token: sessionToken },
+    { headers: getAuthHeader() },
+  );
+  return response.data;
+};

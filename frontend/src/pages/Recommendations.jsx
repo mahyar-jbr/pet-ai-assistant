@@ -1,12 +1,22 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+/**
+ * Recommendations — Scored food results with client-side filtering, sorting, product detail overlay,
+ * comparison tool, and purchase tracking. Shows unified header when authenticated.
+ * Backend sends 40 products, frontend caps at 20 unless filters active.
+ * @route /recommendations
+ */
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import FoodCard from '../components/FoodCard';
 import ProductDetail from '../components/ProductDetail';
 import ComparisonTool from '../components/ComparisonTool';
 import FilterBar from '../components/FilterBar';
-import { getRecommendations, transformRecommendation } from '../api/petApi';
+import SaveResultsBanner from '../components/SaveResultsBanner';
+import LogPurchaseModal from '../components/LogPurchaseModal';
+import { getRecommendations, transformRecommendation, getCurrentUser, getPet } from '../api/petApi';
+import { isAuthenticated } from '../utils/auth';
 import { formatCompareLabel } from '../utils/foodUtils';
 import '../styles/recommendation.css';
+import '../styles/dashboard.css';
 
 const buildPriceRanges = (foods) => {
   const prices = foods.map((f) => f.price).filter(Number.isFinite).sort((a, b) => a - b);
@@ -39,12 +49,17 @@ const Recommendations = () => {
   const [totalMatches, setTotalMatches] = useState(0);
   const [sortOption, setSortOption] = useState('default');
   const [compareState, setCompareState] = useState({ isOpen: false, primary: '', secondary: '' });
+  const [authedPetId, setAuthedPetId] = useState(null);
 
   // Product detail overlay — driven by URL param
   const selectedFoodId = searchParams.get('product') || null;
 
   // Lifted weight input state (persists across product nav)
   const [weightLbs, setWeightLbs] = useState('');
+
+  // Save Results banner triggers
+  const [hasClosedOverlay, setHasClosedOverlay] = useState(false);
+  const [hasScrolledPast5, setHasScrolledPast5] = useState(false);
 
   const setSelectedFoodId = useCallback((id) => {
     if (id) {
@@ -59,6 +74,9 @@ const Recommendations = () => {
   const [priceRangeIndex, setPriceRangeIndex] = useState(0);
   const [selectedProteins, setSelectedProteins] = useState(new Set());
   const [grainFreeOnly, setGrainFreeOnly] = useState(false);
+
+  // Purchase modal state
+  const [purchaseProduct, setPurchaseProduct] = useState(null);
 
   // Derive dynamic price ranges from loaded foods
   const PRICE_RANGES = useMemo(() => buildPriceRanges(foods), [foods]);
@@ -203,6 +221,27 @@ const Recommendations = () => {
     return foods.find((f) => f.compareId === selectedFoodId) || null;
   }, [selectedFoodId, foods]);
 
+  // Scroll to top before browser paint
+  useLayoutEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Clear stale product overlay param from previous visits
+    if (searchParams.get('product')) {
+      searchParams.delete('product');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to top again after content finishes loading (prevents layout shift)
+  useEffect(() => {
+    if (!loading) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
+    }
+  }, [loading]);
+
   useEffect(() => {
     const loadRecommendations = async () => {
       try {
@@ -212,13 +251,27 @@ const Recommendations = () => {
         } catch {
           localStorage.removeItem('petData');
         }
+
+        let petId = searchParams.get('petId') || localStorage.getItem('petId');
+
+        // If localStorage is empty but we have a petId, fetch pet data from API
+        if ((!storedPetData || !storedPetData.ageGroup) && petId) {
+          try {
+            const fetched = await getPet(petId);
+            storedPetData = fetched;
+            localStorage.setItem('petData', JSON.stringify(fetched));
+            localStorage.setItem('petId', petId);
+          } catch {
+            navigate('/?reason=no-profile');
+            return;
+          }
+        }
+
         if (!storedPetData || !storedPetData.ageGroup) {
           navigate('/?reason=no-profile');
           return;
         }
         setPetData(storedPetData);
-
-        let petId = localStorage.getItem('petId');
         const response = await getRecommendations(petId);
         const recommendations = response.recommendations || [];
         const transformedFoods = recommendations.map((item, index) => transformRecommendation(item, index));
@@ -234,6 +287,17 @@ const Recommendations = () => {
         }
 
         setFoods(transformedFoods);
+
+        // Fetch authenticated user's pet ID for purchase tracking
+        if (isAuthenticated()) {
+          try {
+            const userData = await getCurrentUser();
+            if (userData.pets?.length > 0) {
+              setAuthedPetId(userData.pets[0].id || userData.pets[0].public_id);
+            }
+          } catch { /* ignore — guest mode fallback */ }
+        }
+
         setLoading(false);
       } catch (err) {
         console.error('Failed to load recommendations:', err);
@@ -297,7 +361,22 @@ const Recommendations = () => {
 
   const handleCloseDetail = useCallback(() => {
     setSelectedFoodId(null);
+    setHasClosedOverlay(true);
   }, [setSelectedFoodId]);
+
+  const handleBuyThis = useCallback((food) => {
+    if (isAuthenticated()) {
+      if (!authedPetId) {
+        alert('Set up your pet profile first to track purchases.');
+        return;
+      }
+      setSelectedFoodId(null); // Close product detail overlay first
+      setPurchaseProduct(food);
+    } else {
+      sessionStorage.setItem('pendingPurchaseProductId', food.id || food.compareId);
+      navigate('/login');
+    }
+  }, [navigate, authedPetId]);
 
   const handleNavigateDetail = useCallback((compareId) => {
     setSelectedFoodId(compareId);
@@ -347,7 +426,7 @@ const Recommendations = () => {
     localStorage.removeItem('petId');
     localStorage.removeItem('sessionToken');
     localStorage.removeItem('petData');
-    navigate('/');
+    navigate('/?new=true');
   }, [navigate]);
 
   const handleResetAll = useCallback(() => {
@@ -402,6 +481,23 @@ const Recommendations = () => {
         break;
     }
   }, []);
+
+  // Scroll-past-5th-card trigger for SaveResultsBanner
+  useEffect(() => {
+    if (isAuthenticated() || hasScrolledPast5) return;
+    const handleScroll = () => {
+      const cards = document.querySelectorAll('.food-card');
+      if (cards.length >= 5) {
+        const fifth = cards[4];
+        const rect = fifth.getBoundingClientRect();
+        if (rect.top < window.innerHeight) {
+          setHasScrolledPast5(true);
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasScrolledPast5]);
 
   if (loading) {
     return (
@@ -471,18 +567,41 @@ const Recommendations = () => {
   }
 
   return (
-    <>
-      {/* Logo + Start Over */}
-      <div className="rec-header">
-        <img src="/logo.png" alt="Pet AI Assistant" className="rec-logo" />
-        <button type="button" className="start-over-btn" onClick={handleStartOver}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="1 4 1 10 7 10" />
-            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-          </svg>
-          Start Over
-        </button>
-      </div>
+    <div className="page-transition">
+      {/* Header */}
+      {isAuthenticated() ? (
+        <header className="dashboard-header">
+          <div className="dashboard-header-left">
+            <img src="/logo.png" alt="Pet AI Assistant" className="dashboard-logo" />
+            <span className="dashboard-header-title">Pet AI Assistant</span>
+          </div>
+          <nav className="dashboard-nav">
+            <Link to="/recommendations" className="dash-nav-link dash-nav-link--active">Browse Foods</Link>
+            <Link to="/dashboard" className="dash-nav-link">Dashboard</Link>
+            <button type="button" className="dash-nav-link" onClick={handleStartOver}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              Start Over
+            </button>
+          </nav>
+        </header>
+      ) : (
+        <div className="rec-header">
+          <img src="/logo.png" alt="Pet AI Assistant" className="rec-logo" />
+          <div className="rec-header-right">
+            <Link to="/login" className="rec-header-link">Sign In</Link>
+            <button type="button" className="start-over-btn" onClick={handleStartOver}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              Start Over
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Pet Profile Summary */}
       <section className="pet-profile">
@@ -558,6 +677,8 @@ const Recommendations = () => {
           </div>
         </div>
       )}
+
+      {/* Save Results Banner is rendered inline in the food grid */}
 
       {/* Food Recommendations */}
       <section className="food-recommendations">
@@ -636,13 +757,21 @@ const Recommendations = () => {
         <div className="food-section">
           <div className="food-grid">
             {displayFoods.map((food, idx) => (
-              <FoodCard
-                key={food.compareId || idx}
-                food={food}
-                profile={petData}
-                onSelect={handleSelectCard}
-                onCompare={openCompareModal}
-              />
+              <React.Fragment key={food.compareId || idx}>
+                {idx === 2 && (
+                  <SaveResultsBanner
+                    petName={petData?.name}
+                    triggerOverlayClose={hasClosedOverlay}
+                    triggerScrollPast5={hasScrolledPast5}
+                  />
+                )}
+                <FoodCard
+                  food={food}
+                  profile={petData}
+                  onSelect={handleSelectCard}
+                  onCompare={openCompareModal}
+                />
+              </React.Fragment>
             ))}
           </div>
 
@@ -704,6 +833,7 @@ const Recommendations = () => {
           onClose={handleCloseDetail}
           onNavigate={handleNavigateDetail}
           onCompare={openCompareModal}
+          onBuyThis={handleBuyThis}
           weightLbs={weightLbs}
           setWeightLbs={setWeightLbs}
         />
@@ -719,7 +849,17 @@ const Recommendations = () => {
         onSelectChange={updateCompareSelection}
         petName={petData?.name || ''}
       />
-    </>
+
+      {/* Log Purchase Modal */}
+      {purchaseProduct && petData && (
+        <LogPurchaseModal
+          pet={{ id: authedPetId || localStorage.getItem('petId'), name: petData.name }}
+          product={purchaseProduct}
+          onClose={() => setPurchaseProduct(null)}
+          onSuccess={() => setPurchaseProduct(null)}
+        />
+      )}
+    </div>
   );
 };
 

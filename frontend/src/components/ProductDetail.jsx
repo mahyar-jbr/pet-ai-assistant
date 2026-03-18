@@ -44,7 +44,7 @@ const classifyTag = (tag) => {
   return '';
 };
 
-const ProductDetail = ({ food, profile, foods, onClose, onNavigate, onCompare, weightLbs, setWeightLbs }) => {
+const ProductDetail = ({ food, profile, foods, onClose, onNavigate, onCompare, onBuyThis, weightLbs, setWeightLbs }) => {
   const panelRef = useRef(null);
   const bodyRef = useRef(null);
   const nutritionRef = useRef(null);
@@ -603,6 +603,19 @@ const ProductDetail = ({ food, profile, foods, onClose, onNavigate, onCompare, w
           <div>
             {priceLine && <span className="detail-overlay-price">{priceLine}</span>}
           </div>
+          <div className="detail-overlay-footer-actions">
+            {onBuyThis && (
+              <button
+                type="button"
+                className="detail-buy-btn"
+                onClick={() => onBuyThis(food)}
+              >
+                <svg className="detail-buy-icon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="2 8 6 12 14 4" />
+                </svg>
+                I Bought This
+              </button>
+            )}
           {food.url && (
             <a
               className="shop-btn"
@@ -621,6 +634,7 @@ const ProductDetail = ({ food, profile, foods, onClose, onNavigate, onCompare, w
               </svg>
             </a>
           )}
+          </div>
         </div>
       </div>
     </div>
