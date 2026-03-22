@@ -4,7 +4,7 @@
  * Backend sends 40 products, frontend caps at 20 unless filters active.
  * @route /recommendations
  */
-import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import FoodCard from '../components/FoodCard';
 import ProductDetail from '../components/ProductDetail';
@@ -13,7 +13,7 @@ import FilterBar from '../components/FilterBar';
 import SaveResultsBanner from '../components/SaveResultsBanner';
 import LogPurchaseModal from '../components/LogPurchaseModal';
 import { getRecommendations, transformRecommendation, getCurrentUser, getPet } from '../api/petApi';
-import { isAuthenticated } from '../utils/auth';
+import { isAuthenticated, clearToken } from '../utils/auth';
 import { formatCompareLabel } from '../utils/foodUtils';
 import '../styles/recommendation.css';
 import '../styles/dashboard.css';
@@ -50,6 +50,8 @@ const Recommendations = () => {
   const [sortOption, setSortOption] = useState('default');
   const [compareState, setCompareState] = useState({ isOpen: false, primary: '', secondary: '' });
   const [authedPetId, setAuthedPetId] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef(null);
 
   // Product detail overlay — driven by URL param
   const selectedFoodId = searchParams.get('product') || null;
@@ -74,6 +76,7 @@ const Recommendations = () => {
   const [priceRangeIndex, setPriceRangeIndex] = useState(0);
   const [selectedProteins, setSelectedProteins] = useState(new Set());
   const [grainFreeOnly, setGrainFreeOnly] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   // Purchase modal state
   const [purchaseProduct, setPurchaseProduct] = useState(null);
@@ -107,7 +110,7 @@ const Recommendations = () => {
   }, [foods]);
 
   // Check if any filter is active
-  const hasActiveFilters = selectedBrands.size > 0 || priceRangeIndex > 0 || selectedProteins.size > 0 || grainFreeOnly;
+  const hasActiveFilters = selectedBrands.size > 0 || priceRangeIndex > 0 || selectedProteins.size > 0 || grainFreeOnly || favoritesOnly;
 
   // Build active filter chips for display
   const activeFilterChips = useMemo(() => {
@@ -124,8 +127,11 @@ const Recommendations = () => {
     if (grainFreeOnly) {
       chips.push({ type: 'grainFree', label: 'Grain-Free Only', value: true });
     }
+    if (favoritesOnly) {
+      chips.push({ type: 'favorites', label: 'Favorites Only', value: true });
+    }
     return chips;
-  }, [selectedBrands, selectedProteins, priceRangeIndex, grainFreeOnly]);
+  }, [selectedBrands, selectedProteins, priceRangeIndex, grainFreeOnly, favoritesOnly]);
 
   // Apply filters then sort
   const displayFoods = useMemo(() => {
@@ -160,6 +166,14 @@ const Recommendations = () => {
     // Grain-free filter
     if (grainFreeOnly) {
       list = list.filter((food) => food.grainFree);
+    }
+
+    // Favorites filter
+    if (favoritesOnly) {
+      try {
+        const favs = JSON.parse(localStorage.getItem('favoriteFoods') || '[]');
+        list = list.filter((food) => favs.includes(food.compareId));
+      } catch { /* ignore */ }
     }
 
     // Sort
@@ -204,7 +218,7 @@ const Recommendations = () => {
     }
 
     return sorted;
-  }, [foods, sortOption, selectedBrands, priceRangeIndex, selectedProteins, grainFreeOnly, hasActiveFilters]);
+  }, [foods, sortOption, selectedBrands, priceRangeIndex, selectedProteins, grainFreeOnly, favoritesOnly, hasActiveFilters]);
 
   const resultsLabel = useMemo(() => {
     const count = displayFoods.length;
@@ -429,12 +443,32 @@ const Recommendations = () => {
     navigate('/?new=true');
   }, [navigate]);
 
+  const handleLogout = useCallback(() => {
+    clearToken();
+    localStorage.removeItem('petId');
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('petData');
+    navigate('/');
+  }, [navigate]);
+
+  // Close account dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (accountRef.current && !accountRef.current.contains(e.target)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleResetAll = useCallback(() => {
     setSortOption('default');
     setSelectedBrands(new Set());
     setPriceRangeIndex(0);
     setSelectedProteins(new Set());
     setGrainFreeOnly(false);
+    setFavoritesOnly(false);
   }, []);
 
   const toggleBrand = useCallback((brand) => {
@@ -476,6 +510,9 @@ const Recommendations = () => {
         break;
       case 'grainFree':
         setGrainFreeOnly(false);
+        break;
+      case 'favorites':
+        setFavoritesOnly(false);
         break;
       default:
         break;
@@ -571,20 +608,38 @@ const Recommendations = () => {
       {/* Header */}
       {isAuthenticated() ? (
         <header className="dashboard-header">
-          <div className="dashboard-header-left">
+          <Link to="/dashboard" className="dashboard-header-left dash-logo-link">
             <img src="/logo.png" alt="Pet AI Assistant" className="dashboard-logo" />
             <span className="dashboard-header-title">Pet AI Assistant</span>
-          </div>
+          </Link>
           <nav className="dashboard-nav">
-            <Link to="/recommendations" className="dash-nav-link dash-nav-link--active">Browse Foods</Link>
+            <Link to="/recommendations" className="dash-nav-link dash-nav-link--active dash-nav-recommendations">
+              <span className="nav-full">Recommendations</span>
+              <span className="nav-short">Foods</span>
+            </Link>
             <Link to="/dashboard" className="dash-nav-link">Dashboard</Link>
-            <button type="button" className="dash-nav-link" onClick={handleStartOver}>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 4 }}>
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
-              Start Over
-            </button>
+            <div className="dash-account-menu" ref={accountRef}>
+              <button type="button" className="dash-nav-link dash-account-trigger" onClick={() => setAccountOpen((o) => !o)}>
+                <span className="dash-account-text">Account</span>
+                <span className="dash-account-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                </span>
+                <svg className="dash-account-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 6 8 10 12 6" /></svg>
+              </button>
+              {accountOpen && (
+                <div className="dash-account-dropdown dash-account-dropdown--open">
+                  <Link to="/account" className="dash-dropdown-item" onClick={() => setAccountOpen(false)}>Settings</Link>
+                  <Link to="/?new=true" className="dash-dropdown-item" onClick={() => setAccountOpen(false)}>New Pet Profile</Link>
+                  <hr className="dash-dropdown-divider" />
+                  <button type="button" className="dash-dropdown-item dash-dropdown-item--danger" onClick={() => { setAccountOpen(false); handleLogout(); }}>Log Out</button>
+                  <div className="dash-dropdown-legal">
+                    <Link to="/privacy" onClick={() => setAccountOpen(false)}>Privacy</Link>
+                    <span> &middot; </span>
+                    <Link to="/terms" onClick={() => setAccountOpen(false)}>Terms</Link>
+                  </div>
+                </div>
+              )}
+            </div>
           </nav>
         </header>
       ) : (
@@ -674,6 +729,10 @@ const Recommendations = () => {
             <img src="/brands/open-farm.png" alt="Open Farm" className="brand-strip-logo" />
             <span className="brand-strip-dot" aria-hidden="true" />
             <img src="/brands/PerformatrinUltra-logo.svg" alt="Performatrin Ultra" className="brand-strip-logo brand-strip-logo--tall" />
+            <span className="brand-strip-dot" aria-hidden="true" />
+            <img src="/brands/go-solutions.png" alt="Go! Solutions" className="brand-strip-logo brand-strip-logo--tall" />
+            <span className="brand-strip-dot" aria-hidden="true" />
+            <img src="/brands/now-fresh.png" alt="Now Fresh" className="brand-strip-logo brand-strip-logo--tall" />
           </div>
         </div>
       )}
@@ -744,6 +803,8 @@ const Recommendations = () => {
             toggleProtein={toggleProtein}
             grainFreeOnly={grainFreeOnly}
             setGrainFreeOnly={setGrainFreeOnly}
+            favoritesOnly={favoritesOnly}
+            setFavoritesOnly={setFavoritesOnly}
             priceRanges={PRICE_RANGES}
             priceRangeIndex={priceRangeIndex}
             setPriceRangeIndex={setPriceRangeIndex}

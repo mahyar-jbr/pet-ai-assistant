@@ -122,6 +122,58 @@
   color: #ef4444;
 }
 
+.dash-dropdown-divider {
+  border: none;
+  border-top: 1px solid rgba(0, 87, 255, .08);
+  margin: 0.25rem 0;
+}
+
+.dash-dropdown-legal {
+  padding: 0.5rem 1rem;
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+}
+.dash-dropdown-legal a {
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color .2s;
+}
+.dash-dropdown-legal a:hover {
+  color: var(--button-bg, #0057ff);
+}
+
+/* Logo link */
+.dash-logo-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive nav text */
+.nav-short { display: none; }
+.dash-account-icon { display: none; }
+
+@media (max-width: 640px) {
+  .nav-full { display: none; }
+  .nav-short { display: inline; }
+  .dashboard-header-title { display: none; }
+  .dash-account-text { display: none; }
+  .dash-account-chevron { display: none; }
+  .dash-account-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: var(--button-bg, #0057ff);
+  }
+}
+
 /* ─── Content — same max-width as .pet-profile + .food-grid ─── */
 
 .dashboard-content {
@@ -813,16 +865,15 @@
     justify-content: center;
   }
 
-  /* Purchase history — 4 columns with smaller thumb */
+  /* Purchase history — hide thumbnail on mobile */
   .dash-purchase-row {
-    grid-template-columns: 50px 28px 1fr 50px 24px;
+    grid-template-columns: 50px 1fr 50px 24px;
     font-size: 13px;
     padding: 0.6rem 1rem;
   }
 
   .dash-purchase-thumb {
-    width: 28px;
-    height: 28px;
+    display: none;
   }
 
   .dash-purchase-delete {
@@ -969,6 +1020,20 @@
 .purchase-product-score {
   font-size: 13px;
   font-weight: 700;
+  color: var(--button-bg, #0057ff);
+}
+
+.purchase-search-link {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+  text-decoration: none;
+  margin-top: 1rem;
+  padding: 8px;
+  transition: color .2s;
+}
+.purchase-search-link:hover {
   color: var(--button-bg, #0057ff);
 }
 

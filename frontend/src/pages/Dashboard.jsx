@@ -256,22 +256,35 @@ const Dashboard = () => {
     <div className="dashboard-page page-transition">
       {/* Header */}
       <header className="dashboard-header">
-        <div className="dashboard-header-left">
+        <Link to="/dashboard" className="dashboard-header-left dash-logo-link">
           <img src="/logo.png" alt="Pet AI Assistant" className="dashboard-logo" />
           <span className="dashboard-header-title">Pet AI Assistant</span>
-        </div>
+        </Link>
         <nav className="dashboard-nav">
-          <Link to="/recommendations" className="dash-nav-link">Browse Foods</Link>
+          <Link to="/recommendations" className="dash-nav-link dash-nav-recommendations">
+            <span className="nav-full">Recommendations</span>
+            <span className="nav-short">Foods</span>
+          </Link>
           <Link to="/dashboard" className="dash-nav-link dash-nav-link--active">Dashboard</Link>
           <div className="dash-account-menu" ref={accountRef}>
             <button type="button" className="dash-nav-link dash-account-trigger" onClick={() => setAccountOpen((o) => !o)}>
-              Account
-              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 6 8 10 12 6" /></svg>
+              <span className="dash-account-text">Account</span>
+              <span className="dash-account-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+              </span>
+              <svg className="dash-account-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 6 8 10 12 6" /></svg>
             </button>
             {accountOpen && (
               <div className="dash-account-dropdown dash-account-dropdown--open">
                 <Link to="/account" className="dash-dropdown-item" onClick={() => setAccountOpen(false)}>Settings</Link>
+                <Link to="/?new=true" className="dash-dropdown-item" onClick={() => setAccountOpen(false)}>New Pet Profile</Link>
+                <hr className="dash-dropdown-divider" />
                 <button type="button" className="dash-dropdown-item dash-dropdown-item--danger" onClick={() => { setAccountOpen(false); handleLogout(); }}>Log Out</button>
+                <div className="dash-dropdown-legal">
+                  <Link to="/privacy" onClick={() => setAccountOpen(false)}>Privacy</Link>
+                  <span> &middot; </span>
+                  <Link to="/terms" onClick={() => setAccountOpen(false)}>Terms</Link>
+                </div>
               </div>
             )}
           </div>
@@ -344,7 +357,6 @@ const Dashboard = () => {
                   </div>
                   <div className="dash-pet-actions">
                     <Link to={`/recommendations${(pet?.id || pet?.public_id) ? `?petId=${pet.id || pet.public_id}` : ''}`} className="dash-btn-primary">View Recommendations</Link>
-                    <Link to="/dashboard/add-pet" className="dash-btn-outline">+ Add Pet</Link>
                   </div>
                 </div>
               </div>
@@ -359,6 +371,10 @@ const Dashboard = () => {
                   <img src="/brands/open-farm.png" alt="Open Farm" className="brand-strip-logo" />
                   <span className="brand-strip-dot" aria-hidden="true" />
                   <img src="/brands/PerformatrinUltra-logo.svg" alt="Performatrin Ultra" className="brand-strip-logo brand-strip-logo--tall" />
+                  <span className="brand-strip-dot" aria-hidden="true" />
+                  <img src="/brands/go-solutions.png" alt="Go! Solutions" className="brand-strip-logo brand-strip-logo--tall" />
+                  <span className="brand-strip-dot" aria-hidden="true" />
+                  <img src="/brands/now-fresh.png" alt="Now Fresh" className="brand-strip-logo brand-strip-logo--tall" />
                 </div>
               </div>
             </>
@@ -559,11 +575,6 @@ const Dashboard = () => {
             </div>
           </section>
         )}
-
-        {/* Bottom CTA */}
-        <div className="dash-bottom-cta">
-          <Link to={`/recommendations${(pet?.id || pet?.public_id) ? `?petId=${pet.id || pet.public_id}` : ''}`} className="dash-btn-primary">Browse New Recommendations</Link>
-        </div>
 
         <p className="dash-feedback">
           Found a problem?{' '}

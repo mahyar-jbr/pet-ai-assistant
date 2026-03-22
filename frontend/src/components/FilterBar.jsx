@@ -8,6 +8,25 @@ const SORT_OPTIONS = [
   { value: 'fat-low', label: 'Fat: Low → High' },
 ];
 
+/** Small helper for the favorites toggle — reads localStorage once per render */
+const FavoritesToggle = ({ favoritesOnly, setFavoritesOnly }) => {
+  let hasFavs = false;
+  try { hasFavs = JSON.parse(localStorage.getItem('favoriteFoods') || '[]').length > 0; } catch { /* ignore */ }
+  const disabled = !hasFavs && !favoritesOnly;
+
+  return (
+    <button
+      type="button"
+      className={`filter-btn filter-btn-toggle${favoritesOnly ? ' active' : ''}`}
+      onClick={() => !disabled && setFavoritesOnly((prev) => !prev)}
+      title={disabled ? 'Heart some foods first' : ''}
+      disabled={disabled}
+    >
+      Favorites
+    </button>
+  );
+};
+
 const FilterBar = ({
   availableBrands,
   selectedBrands,
@@ -17,6 +36,8 @@ const FilterBar = ({
   toggleProtein,
   grainFreeOnly,
   setGrainFreeOnly,
+  favoritesOnly = false,
+  setFavoritesOnly,
   priceRanges,
   priceRangeIndex,
   setPriceRangeIndex,
@@ -125,6 +146,11 @@ const FilterBar = ({
         >
           Grain-Free
         </button>
+
+        {/* Favorites toggle */}
+        {setFavoritesOnly && (
+          <FavoritesToggle favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly} />
+        )}
 
         {/* Price */}
         <div className="filter-btn-wrap">

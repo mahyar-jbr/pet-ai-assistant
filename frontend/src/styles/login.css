@@ -404,6 +404,15 @@
   margin: 0.25rem 0 0;
 }
 
+.account-summary {
+  margin-top: 0.75rem;
+  font-size: 14px;
+  color: #64748b;
+}
+.account-summary p {
+  margin: 0.25rem 0;
+}
+
 .account-feedback-link {
   display: block;
   margin-top: 0.75rem;

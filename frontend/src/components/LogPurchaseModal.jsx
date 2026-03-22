@@ -174,6 +174,13 @@ const LogPurchaseModal = ({ pet = {}, product: preselectedProduct = null, editPu
                     <span className="purchase-product-score">{food.matchScore}</span>
                   </button>
                 ))}
+                <a
+                  href={`/recommendations${pet?.id || pet?.public_id ? `?petId=${pet.id || pet.public_id}` : ''}`}
+                  className="purchase-search-link"
+                  onClick={onClose}
+                >
+                  Don't see your food? Browse all products &rarr;
+                </a>
               </div>
             )}
             {error && <p className="purchase-modal-error">{error}</p>}

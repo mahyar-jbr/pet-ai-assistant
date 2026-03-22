@@ -78,6 +78,11 @@ const AccountPage = () => {
           <p className="account-value">{user?.email || 'Unknown'}</p>
         </div>
 
+        <div className="account-summary">
+          <p>Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}</p>
+          <p>{user?.pets?.length || 0} pet{(user?.pets?.length || 0) !== 1 ? 's' : ''}</p>
+        </div>
+
         <a href="mailto:jaberi.mahyar@gmail.com?subject=Pet AI Assistant — Bug Report" className="account-feedback-link">Report an issue</a>
 
         <hr className="account-divider" />

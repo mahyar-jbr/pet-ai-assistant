@@ -80,7 +80,7 @@ const LoginPage = () => {
 
         {view === 'form' || view === 'error' ? (
           <>
-            <h2 className="login-subtitle">Welcome back</h2>
+            <h2 className="login-subtitle">Sign in to your account</h2>
             <p className="login-description">
               Enter your email and we'll send you a link to sign in.
             </p>

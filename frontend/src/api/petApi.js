@@ -140,9 +140,9 @@ export const transformRecommendation = (recommendation, index = 0) => {
 
   const compareId = createCompareId(product, index);
   const detail = {
-    name: product.id
-      ? product.id.replace(/^[^-]+-/, '').replace(/-/g, ' ')
-      : product.line || product.name || '',
+    name: product.line
+      || (product.id ? product.id.replace(/^[^-]+-/, '').replace(/-/g, ' ') : '')
+      || product.name || '',
     ingredients: collectIngredients(product),
     feeding: buildFeedingPairs(product),
     analysis: buildAnalysisPairs(product),
