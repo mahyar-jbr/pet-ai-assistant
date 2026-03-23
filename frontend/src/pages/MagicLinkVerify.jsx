@@ -39,7 +39,7 @@ const MagicLinkVerify = () => {
   return (
     <div className="login-page page-transition">
       <div className="login-card">
-        <img src="/logo.png" alt="Pet AI Assistant" className="login-logo" />
+        <img src="/logo.png" alt="BowlWise" className="login-logo" />
         {error ? (
           <>
             <h2 className="login-subtitle">{error}</h2>

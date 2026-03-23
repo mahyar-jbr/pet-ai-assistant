@@ -20,7 +20,7 @@ const PrivacyPage = () => {
         <p className="legal-updated">Last updated: March 2026</p>
 
         <div className="legal-body">
-          <p>Pet AI Assistant ("we", "our") respects your privacy. This policy explains what data we collect, why, and how we protect it.</p>
+          <p>BowlWise ("we", "our") respects your privacy. This policy explains what data we collect, why, and how we protect it.</p>
 
           <h2>What We Collect</h2>
           <ul>

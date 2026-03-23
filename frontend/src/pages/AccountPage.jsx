@@ -70,7 +70,7 @@ const AccountPage = () => {
     <div className="login-page page-transition">
       <Link to="/dashboard" className="account-back-link">&larr; Dashboard</Link>
       <div className="login-card">
-        <img src="/logo.png" alt="Pet AI Assistant" className="login-logo" />
+        <img src="/logo.png" alt="BowlWise" className="login-logo" />
         <h1 className="login-title">Account Settings</h1>
 
         <div className="account-field">
@@ -83,7 +83,7 @@ const AccountPage = () => {
           <p>{user?.pets?.length || 0} pet{(user?.pets?.length || 0) !== 1 ? 's' : ''}</p>
         </div>
 
-        <a href="mailto:jaberi.mahyar@gmail.com?subject=Pet AI Assistant — Bug Report" className="account-feedback-link">Report an issue</a>
+        <a href="mailto:jaberi.mahyar@gmail.com?subject=BowlWise — Bug Report" className="account-feedback-link">Report an issue</a>
 
         <hr className="account-divider" />
 

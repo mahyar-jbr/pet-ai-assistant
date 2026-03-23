@@ -257,8 +257,8 @@ const Dashboard = () => {
       {/* Header */}
       <header className="dashboard-header">
         <Link to="/dashboard" className="dashboard-header-left dash-logo-link">
-          <img src="/logo.png" alt="Pet AI Assistant" className="dashboard-logo" />
-          <span className="dashboard-header-title">Pet AI Assistant</span>
+          <img src="/logo.png" alt="BowlWise" className="dashboard-logo" />
+          <span className="dashboard-header-title">BowlWise</span>
         </Link>
         <nav className="dashboard-nav">
           <Link to="/recommendations" className="dash-nav-link dash-nav-recommendations">
@@ -578,7 +578,7 @@ const Dashboard = () => {
 
         <p className="dash-feedback">
           Found a problem?{' '}
-          <a href="mailto:jaberi.mahyar@gmail.com?subject=Pet AI Assistant — Bug Report" className="dash-feedback-link">Let us know &rarr;</a>
+          <a href="mailto:jaberi.mahyar@gmail.com?subject=BowlWise — Bug Report" className="dash-feedback-link">Let us know &rarr;</a>
         </p>
       </main>
 

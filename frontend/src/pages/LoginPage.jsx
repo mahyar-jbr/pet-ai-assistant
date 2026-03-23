@@ -75,8 +75,8 @@ const LoginPage = () => {
   return (
     <div className="login-page page-transition">
       <div className="login-card">
-        <img src="/logo.png" alt="Pet AI Assistant" className="login-logo" />
-        <h1 className="login-title">Pet AI Assistant</h1>
+        <img src="/logo.png" alt="BowlWise" className="login-logo" />
+        <h1 className="login-title">BowlWise</h1>
 
         {view === 'form' || view === 'error' ? (
           <>

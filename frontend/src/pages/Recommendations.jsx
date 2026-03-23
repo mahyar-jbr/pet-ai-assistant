@@ -609,8 +609,8 @@ const Recommendations = () => {
       {isAuthenticated() ? (
         <header className="dashboard-header">
           <Link to="/dashboard" className="dashboard-header-left dash-logo-link">
-            <img src="/logo.png" alt="Pet AI Assistant" className="dashboard-logo" />
-            <span className="dashboard-header-title">Pet AI Assistant</span>
+            <img src="/logo.png" alt="BowlWise" className="dashboard-logo" />
+            <span className="dashboard-header-title">BowlWise</span>
           </Link>
           <nav className="dashboard-nav">
             <Link to="/recommendations" className="dash-nav-link dash-nav-link--active dash-nav-recommendations">
@@ -644,7 +644,7 @@ const Recommendations = () => {
         </header>
       ) : (
         <div className="rec-header">
-          <img src="/logo.png" alt="Pet AI Assistant" className="rec-logo" />
+          <img src="/logo.png" alt="BowlWise" className="rec-logo" />
           <div className="rec-header-right">
             <Link to="/login" className="rec-header-link">Sign In</Link>
             <button type="button" className="start-over-btn" onClick={handleStartOver}>

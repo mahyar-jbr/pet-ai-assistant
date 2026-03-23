@@ -423,7 +423,7 @@ const PetForm = () => {
           </Link>
         </div>
         {/* Logo — visible on all steps */}
-        <img src="/logo.png" alt="Pet AI Assistant" className="form-logo" />
+        <img src="/logo.png" alt="BowlWise" className="form-logo" />
 
         {/* Progress bar */}
         <div className="wizard-progress">
