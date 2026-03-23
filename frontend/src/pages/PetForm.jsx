@@ -260,7 +260,7 @@ const PetForm = () => {
                 </div>
                 <div className="how-it-works-step">
                   <div className="how-step-number">2</div>
-                  <p>Our algorithm scores 114+ foods from 4 premium brands</p>
+                  <p>Our algorithm scores 150+ foods from 6 premium brands</p>
                 </div>
                 <div className="how-it-works-step">
                   <div className="how-step-number">3</div>

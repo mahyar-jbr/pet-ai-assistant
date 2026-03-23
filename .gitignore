@@ -10,7 +10,6 @@ ENV/
 .env
 LEARNING_PLAN.md
 CLAUDE.md
-ROADMAP.md
 
 # Node / Frontend
 node_modules/
