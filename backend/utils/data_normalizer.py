@@ -1,5 +1,5 @@
 """
-Pet AI Assistant - Data Normalizer
+BowlWise - Data Normalizer
 
 This module transforms raw scraped product data into a standardized format
 for MongoDB storage. It's used by web scrapers to ensure consistent data.

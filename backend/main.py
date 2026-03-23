@@ -1,5 +1,5 @@
 """
-Pet AI Assistant — FastAPI Backend (Single-file Architecture)
+BowlWise — FastAPI Backend (Single-file Architecture)
 
 All backend logic lives here: app setup, middleware, models, helpers,
 authentication, CRUD endpoints, scoring engine, and recommendations.
@@ -105,7 +105,7 @@ if RESEND_API_KEY:
 async def lifespan(app: FastAPI):
     """Startup and shutdown logic."""
     # --- Startup ---
-    logger.info("Pet AI Assistant API starting up...")
+    logger.info("BowlWise API starting up...")
     logger.info("MongoDB client initialized (database: %s)", DATABASE_NAME)
 
     # Create database indexes for query performance
@@ -126,7 +126,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # --- Shutdown ---
-    logger.info("Shutting down Pet AI Assistant API...")
+    logger.info("Shutting down BowlWise API...")
     client.close()
     logger.info("MongoDB connection closed")
 
@@ -137,7 +137,7 @@ async def lifespan(app: FastAPI):
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 
 app = FastAPI(
-    title="Pet AI Assistant API",
+    title="BowlWise API",
     description="Backend API for pet food recommendations",
     version="2.0.0",
     lifespan=lifespan,
@@ -620,7 +620,7 @@ async def send_magic_link_email(email: str, token: str):
 
     html_body = f"""
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1a1a2e; margin-bottom: 24px;">Sign in to Pet AI Assistant</h2>
+        <h2 style="color: #1a1a2e; margin-bottom: 24px;">Sign in to BowlWise</h2>
         <p style="color: #444; font-size: 16px; line-height: 1.5;">Click the button below to sign in to your account:</p>
         <a href="{verify_url}" style="display: inline-block; background: #2563eb; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin: 24px 0;">Sign In</a>
         <p style="color: #888; font-size: 14px; margin-top: 32px;">This link expires in 15 minutes.</p>
@@ -634,9 +634,9 @@ async def send_magic_link_email(email: str, token: str):
 
     try:
         resend.Emails.send({
-            "from": "Pet AI Assistant <onboarding@resend.dev>",
+            "from": "BowlWise <onboarding@resend.dev>",
             "to": [email],
-            "subject": "Sign in to Pet AI Assistant",
+            "subject": "Sign in to BowlWise",
             "html": html_body,
         })
         logger.info("Magic link email sent to %s...%s", email[:3], email.split('@')[1])
@@ -655,7 +655,7 @@ async def root():
     """Root endpoint — confirms API is running."""
     return {
         "status": "running",
-        "message": "Pet AI Assistant API is up and running!",
+        "message": "BowlWise API is up and running!",
         "version": "2.0.0"
     }
 
@@ -1369,7 +1369,7 @@ async def get_product_by_id(product_id: str):
 # Recommendation Engine
 # ============================================
 
-# This is the "brain" of the Pet AI Assistant - it matches products to pets.
+# This is the "brain" of BowlWise - it matches products to pets.
 #
 # How it works:
 #   1. Take a pet profile (size, activity, goals, allergies)

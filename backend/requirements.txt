@@ -1,4 +1,4 @@
-# FastAPI Backend Dependencies for Pet AI Assistant
+# FastAPI Backend Dependencies for BowlWise
 
 # Core Framework
 fastapi>=0.109.0,<1.0.0

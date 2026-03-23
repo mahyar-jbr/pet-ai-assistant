@@ -1,5 +1,5 @@
 """
-Pet AI Assistant - Product Import Script
+BowlWise - Product Import Script
 
 This script imports dog food product data from a Google Sheet into MongoDB.
 It's the data pipeline that populates your products collection.
@@ -289,7 +289,7 @@ def main():
     2. Import cleaned data to MongoDB
     """
     print("=" * 60)
-    print("Pet AI Assistant - Product Import Script")
+    print("BowlWise - Product Import Script")
     print("=" * 60)
     print()
 
