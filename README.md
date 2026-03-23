@@ -1,8 +1,8 @@
-# Pet AI Assistant
+# BowlWise
 
-A full-stack dog food recommendation and tracking app. Create your dog's profile, get personalized scored recommendations from 114 products across 4 premium brands, then track your purchases, monitor bag depletion, and know exactly when to reorder.
+A full-stack dog food recommendation and tracking app. Create your dog's profile, get personalized scored recommendations from 150 products across 6 premium brands, then track your purchases, monitor bag depletion, and know exactly when to reorder.
 
-**Live:** [pet-ai-assistant-seven.vercel.app](https://pet-ai-assistant-seven.vercel.app)
+**Live:** [bowlwise.app](https://bowlwise.app)
 
 ---
 
@@ -16,7 +16,8 @@ A full-stack dog food recommendation and tracking app. Create your dog's profile
 - **Life-Stage Nutrition** — Puppy Ca:P ratio + DHA scoring, senior fiber + omega-3 scoring, adult formulation matching
 - **Personalized Results** — Match reasons reference your dog by name and connect to their profile
 - **Dynamic Product Pool** — Backend sends 40 scored products; frontend shows top 20 by default, filters reveal more
-- **Popover Filters** — Filter by brand, protein source, grain-free, and price using popover dropdowns with counts
+- **Popover Filters** — Filter by brand, protein source, grain-free, favorites, and price using popover dropdowns with counts
+- **Favorites** — Heart foods to save them, filter by favorites across sessions (localStorage)
 - **Product Detail Overlay** — DoorDash-style slide-up with 3 content zones (nutrition, ingredients, feeding calculator)
 - **Feeding Calculator** — Personalized daily cups, cost/day, cost/month, and bag duration based on weight and activity
 - **Side-by-Side Comparison** — Compare two foods with winner highlighting across all metrics
@@ -73,7 +74,7 @@ A full-stack dog food recommendation and tracking app. Create your dog's profile
 - Indexed on `life_stage`, `breed_size`, `format`, `brand`, `email` (unique), `magic_link_token`
 
 ### Data
-- **114 products** across 4 brands (Orijen, Acana, Open Farm, Performatrin Ultra)
+- **150 products** across 6 brands (Orijen, Acana, Open Farm, Performatrin Ultra, Go! Solutions, Now Fresh)
 - Complete nutritional data: protein%, fat%, fiber%, omega-3/6, DHA, EPA, Ca, P
 - Canadian pricing (CAD), official brand images, all sourced from PetValu.ca
 
@@ -144,23 +145,25 @@ npm run dev
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| GET | `/` | No | Root — confirms API is running |
 | GET | `/health` | No | Health check (DB status + version) |
 | POST | `/api/pets` | No | Create pet profile |
 | GET | `/api/pets/{id}` | Session | Get pet by ID |
 | PUT | `/api/pets/{id}` | Session | Update pet profile |
 | DELETE | `/api/pets/{id}` | Session | Delete pet |
-| GET | `/api/products` | No | List products (filters: brand, life_stage, breed_size) |
-| GET | `/api/recommendations/{pet_id}` | No | Get scored recommendations |
+| POST | `/api/pets/{id}/claim` | JWT | Claim anonymous pet to account |
 | POST | `/api/auth/magic-link` | No | Send magic link email |
 | GET | `/api/auth/verify/{token}` | No | Verify magic link, return JWT |
 | GET | `/api/auth/me` | JWT | Get current user + pets |
-| DELETE | `/api/auth/me` | JWT | Delete account |
+| DELETE | `/api/auth/me` | JWT | Delete account + pets + purchases |
 | POST | `/api/purchases` | JWT | Log a purchase |
 | GET | `/api/purchases` | JWT | Get purchases for a pet |
-| PUT | `/api/purchases/{id}` | JWT | Update purchase |
+| PUT | `/api/purchases/{id}` | JWT | Update purchase (bag size, cups/day) |
+| PATCH | `/api/purchases/{id}/extend` | JWT | Extend active purchase by 7 days |
 | DELETE | `/api/purchases/{id}` | JWT | Delete purchase |
-| PATCH | `/api/purchases/{id}/extend` | JWT | Extend purchase by 7 days |
-| POST | `/api/pets/{id}/claim` | JWT | Claim anonymous pet to account |
+| GET | `/api/products` | No | List products (filters: brand, life_stage, breed_size) |
+| GET | `/api/products/{id}` | No | Get single product by ID |
+| GET | `/api/recommendations/{pet_id}` | No | Get scored recommendations (top 40, score >= 50) |
 
 ---
 
@@ -196,7 +199,7 @@ Only products scoring 50+ are returned, sorted by score descending. Backend send
 backend/
 ├── main.py                 # App, models, routes, scoring engine, auth
 ├── import_products.py      # CSV → MongoDB import (upsert)
-├── product_data.csv        # 114 products (source of truth)
+├── product_data.csv        # 150 products (source of truth)
 ├── .env.example            # Environment variable template
 ├── scrapers/               # Web scrapers (Orijen, PetValu)
 └── utils/
@@ -239,7 +242,7 @@ frontend/
 │       └── login.css               # Login, account, legal pages
 ├── public/
 │   ├── logo.png                    # App logo
-│   ├── brands/                     # Brand logos (orijen, acana, open-farm, performatrin-ultra)
+│   ├── brands/                     # Brand logos (orijen, acana, open-farm, performatrin-ultra, go-solutions, now-fresh)
 │   ├── robots.txt                  # SEO crawl rules
 │   └── sitemap.xml                 # SEO sitemap
 ├── .env.production                 # API URL for deployment
@@ -260,6 +263,7 @@ ENV=development
 JWT_SECRET=your-secret-key          # REQUIRED in production — app crashes on startup if missing
 RESEND_API_KEY=re_xxxxxxxxxxxx      # Resend API key for magic link emails
 MAGIC_LINK_BASE_URL=http://localhost:5173  # Frontend URL used in magic link emails
+SHEETS_CSV_URL=                            # Google Sheets CSV URL for product import (optional)
 ```
 > **Production note:** `ENV=production` disables `/docs`, `/redoc`, and `/openapi.json`. The app will refuse to start if `ENV=production` and `JWT_SECRET` is not set.
 

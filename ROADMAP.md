@@ -1,4 +1,4 @@
-# Pet AI Assistant — Production Roadmap
+# BowlWise — Production Roadmap
 
 > **Goal:** Build the platform for pet food decisions — recommendations, tracking, community, and ML-powered personalization.
 > **Current Status:** Phase 18.5 complete. App live. Coding sprint Mar 16-22, marketing + launch Mar 23-29. Public launch target: March 30, 2026.
@@ -256,12 +256,12 @@ April:      iOS app (SwiftUI) — port finalized web experience + native feature
 - [x] Configure start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 - [x] Set environment variables:
   - `MONGODB_URL` = Atlas connection string
-  - `ALLOWED_ORIGINS` = `https://pet-ai-assistant-seven.vercel.app`
+  - `ALLOWED_ORIGINS` = `https://bowlwise.app`
   - `DATABASE_NAME` = petai
   - `ENV` = production (disables `/docs`, `/redoc`, `/openapi.json`)
   - `JWT_SECRET` = random 64-char secret (REQUIRED — app crashes without it)
   - `RESEND_API_KEY` = Resend API key for magic link emails
-  - `MAGIC_LINK_BASE_URL` = `https://pet-ai-assistant-seven.vercel.app`
+  - `MAGIC_LINK_BASE_URL` = `https://bowlwise.app`
 - [x] Deploy
 - [x] Verify `/health` returns healthy
 - [x] Verify `/api/products` returns products (80 at initial deploy, 114 after PU expansion)
@@ -505,7 +505,7 @@ April:      iOS app (SwiftUI) — port finalized web experience + native feature
 
 ### 19H: Launch Prep — BUILT
 - [x] PetForm text updated: "150+ foods from 6 premium brands"
-- [x] OG image: absolute URL (https://pet-ai-assistant-seven.vercel.app/logo.png)
+- [x] OG image: absolute URL (https://bowlwise.app/logo.png)
 - [x] `.env.production`: VITE_API_URL set to production Railway URL
 - [x] Feedback links: "Report an issue" mailto on Account + Dashboard
 - [x] Vercel Analytics installed (`@vercel/analytics`) + CSP updated for script
@@ -1013,9 +1013,9 @@ db.pets.find({}, { name: 1, created_at: 1, user_agent: 1, ip_hash: 1, referrer: 
 
 ### Deployment (Phase 16)
 - **App is live:** Frontend on Vercel, backend on Railway, database on MongoDB Atlas
-- **Live URL:** https://pet-ai-assistant-seven.vercel.app
+- **Live URL:** https://bowlwise.app
 - **CORS configured:** `ALLOWED_ORIGINS` set to Vercel domain
-- **114 products** imported (80 at initial deploy + 34 Performatrin Ultra)
+- **150 products** imported across 6 brands (Orijen, Acana, Open Farm, Performatrin Ultra, Go! Solutions, Now Fresh)
 
 ### Product Detail Overlay (Phase 15)
 - **Replaced in-place card expansion** with DoorDash-style product detail overlay
